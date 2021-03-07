@@ -1,4 +1,9 @@
 <resources>
     <string name="app_name">GeoNotes</string>
     <string name="title_activity_maps">Map</string>
+    <string name="create_new_place">Create new place</string>
+    <string name="option_get_place">get place</string>
+    <string name="default_info_title">title</string>
+    <string name="default_info_snippet">snippet</string>
+
 </resources>
