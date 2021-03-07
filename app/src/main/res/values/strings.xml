@@ -5,5 +5,6 @@
     <string name="option_get_place">get place</string>
     <string name="default_info_title">title</string>
     <string name="default_info_snippet">snippet</string>
+    <string name="returnPosition">return marked position</string>
 
 </resources>

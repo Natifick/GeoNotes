@@ -6,6 +6,7 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
 
 import android.content.pm.PackageManager;
+import android.location.Geocoder;
 import android.location.Location;
 import android.os.Bundle;
 import android.os.Parcelable;
@@ -32,18 +33,21 @@ import com.google.android.libraries.places.api.net.FindCurrentPlaceRequest;
 import com.google.android.libraries.places.api.net.FindCurrentPlaceResponse;
 import com.google.android.libraries.places.api.net.PlacesClient;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
 import static android.provider.SettingsSlicesContract.KEY_LOCATION;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnInfoWindowClickListener {
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback{
 
     private GoogleMap map;
 
     // remember the user's marker
     LatLng ChosenPoint;
+    // to decode geolocation of marker
+    Geocoder geocoder=new Geocoder(this);
 
     // client for map and location
     FusedLocationProviderClient fusedLocationClient;
@@ -94,6 +98,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mapFragment.getMapAsync(this);
     }
 
+
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         if (map != null) {
@@ -101,12 +106,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             outState.putParcelable(KEY_LOCATION, lastKnownLocation);
         }
         super.onSaveInstanceState(outState);
-    }
-
-    @Override
-    public void onInfoWindowClick(Marker marker) {
-        Toast.makeText(this, "Info window clicked",
-                Toast.LENGTH_SHORT).show();
     }
 
     /**
@@ -123,6 +122,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     PERMISSIONS_ACCESS_FINE_LOCATION);
         }
     }
+
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
@@ -193,6 +193,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                         // Show a dialog offering the user the list of likely places, and add a
                         // marker at the selected place.
+                        // TODO do we even need this?
                         MapsActivity.this.openPlacesDialog();
                     }
                     else {
@@ -305,14 +306,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 ChosenPoint = point;
                 map.clear();
                 map.addMarker(new MarkerOptions().position(point));
+                try{
+                    Toast.makeText(getApplicationContext(), geocoder.getFromLocation(point.latitude, point.longitude, 2).toString(), Toast.LENGTH_LONG).show();
+                }
+                catch (IOException ex){
+                    Log.e("geocoder", ex.getMessage());
+                }
             }
         });
-
         // turn on the location layer
         updateLocationUI();
 
         // get device location and show it on the map
         getDeviceLocation();
-        googleMap.setOnInfoWindowClickListener(this);
     }
 }
