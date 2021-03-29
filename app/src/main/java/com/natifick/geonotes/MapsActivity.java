@@ -7,7 +7,6 @@ import androidx.fragment.app.FragmentActivity;
 
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.location.Geocoder;
 import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
@@ -24,12 +23,11 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.Task;
 
-import java.io.IOException;
+import static com.natifick.geonotes.MainActivity.MARKER;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback{
-
+    // the map itself
     private GoogleMap map;
-
 
     // client for map and location
     FusedLocationProviderClient fusedLocationClient;
@@ -43,14 +41,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     // remember the user's Marker
     LatLng MarkerPoint = defaultLocation;
-    private static final String MARKER = "marker";
-
-    // for logs
-    private static final String TAG = MapsActivity.class.getSimpleName();
 
     // request code when asking permission
     public static final int PERMISSIONS_ACCESS_FINE_LOCATION = 1;
     boolean locationPermissionGranted = false;
+
+    // for logs
+    private static final String TAG = MapsActivity.class.getSimpleName();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -107,7 +105,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            @NonNull String[] permissions,
@@ -117,6 +114,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             if (grantResults.length > 0
                     && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 locationPermissionGranted = true;
+                getDeviceLocation();
             }
         }
         updateLocationUI();
@@ -127,12 +125,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      */
     private void updateLocationUI(){
         if (map == null){
-            return ;
+            return;
         }
         try{
             if (locationPermissionGranted){
                 map.setMyLocationEnabled(true);
                 map.getUiSettings().setMyLocationButtonEnabled(true);
+
             }
             else{
                 map.setMyLocationEnabled(false);
@@ -146,7 +145,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     /**
-     * we find users current location, set the camera to it and put marker
+     * when we find users current location, we set the camera to it and put marker
      */
     private void getDeviceLocation(){
         try {
