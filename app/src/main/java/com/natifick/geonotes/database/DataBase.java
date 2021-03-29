@@ -54,6 +54,17 @@ public class DataBase {
         oldNotesDeleter.setDaemon(true);
     }
 
+    public void deleteNote(Note note) {
+        /*
+        Удаление заметки
+         */
+        try (SQLiteDatabase databaseWriter = helper.getWritableDatabase()) {
+            databaseWriter.delete(DataBaseHelper.TABLE_NAME,
+                    DataBaseHelper.ColumnsNames.NOTE_NAME + "=" + note.getName(), null);
+            listOfNote.remove(note);
+        }
+    }
+
     public void addNewNote(Note note) {
         /*
         Добавление новой метки
@@ -130,8 +141,8 @@ public class DataBase {
             if (note.getTimeToDie() < System.currentTimeMillis()) {
                 if (databaseWriter == null)
                     databaseWriter = helper.getWritableDatabase();
-                listOfNote.remove(note);
                 databaseWriter.delete(DataBaseHelper.TABLE_NAME, DataBaseHelper.ColumnsNames.NOTE_NAME + "=" + note.getName(), null);
+                listOfNote.remove(note);
             }
             //Прекращение выполнения, т. к. записи отсортированы по времени удаления
             else
