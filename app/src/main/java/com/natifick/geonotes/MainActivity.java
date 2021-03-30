@@ -70,6 +70,7 @@ public class MainActivity extends AppCompatActivity {
      * @param view - the only button here
      */
     public void MakeNewPlace(View view) {
+
         Intent intent = new Intent(this, MapsActivity.class);
         startActivityForResult(intent, 1);
 
@@ -87,7 +88,9 @@ public class MainActivity extends AppCompatActivity {
                 ((TextView) findViewById(R.id.UsersPosition)).setText(
                         geocoder.getFromLocation(MarkerPoint.latitude,
                                 MarkerPoint.longitude, 1).get(0).toString());
+                Log.e(TAG, "Begin adding proximity alert");
                 setProximityAlert(MarkerPoint, 1000, -1, "title", "You have arrived!");
+                Log.e(TAG, "End adding proximity alert");
             } catch (IOException ex) {
                 Log.e(TAG, ex.getMessage());
             }
@@ -101,27 +104,32 @@ public class MainActivity extends AppCompatActivity {
      * @param radius - радиус в метрах
      * @param duration - длительность в миллисекундах
      */
-    private void setProximityAlert(LatLng point, float radius, long duration, String title, String message) {
+    private void setProximityAlert(LatLng point, float radius, long duration, String title, String message){
         Context context = getApplicationContext();
         LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        Intent intent = new Intent(context, IntentReciever.class);
+
+        Intent intent = new Intent(context, IntentReceiver.class);
         // It will be easier to find intents after we set their actions as an identifier
         intent.setAction(point.latitude+" "+point.longitude);
+
         intent.putExtra(KEY_MESSAGE, message);
-        intent.putExtra(KEY_TITLE, message);
+        intent.putExtra(KEY_TITLE, title);
+
         //flagging intent
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
         //flagging pendingIntent
         PendingIntent proximityIntent = PendingIntent.getBroadcast(context, -1,
                 intent, PendingIntent.FLAG_CANCEL_CURRENT);
+
         // Checking if user has the right permission again
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            locationManager.addProximityAlert(point.latitude, point.longitude, radius, duration, proximityIntent);//setting proximity alert
+        if (ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            locationManager.addProximityAlert(point.latitude, point.longitude, radius, duration,
+                    proximityIntent);//setting proximity alert
         }
         else {
             Toast.makeText(this, "Can't set marker", Toast.LENGTH_LONG).show();
         }
     }
-
 
 }
