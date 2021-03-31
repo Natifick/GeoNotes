@@ -32,7 +32,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     // client for map and location
     FusedLocationProviderClient fusedLocationClient;
 
-    // to find users current location
+    // camera options for the map
     private static final int DEFAULT_ZOOM = 15;
     private static final String KEY_CAMERA_POSITION = "camera_position";
 
@@ -48,7 +48,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     // for logs
     private static final String TAG = MapsActivity.class.getSimpleName();
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,8 +79,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     /**
-     * Возвращает выбранную геолокацию
-     * @param view - наша кнопка для завершения активности
+     * Returns position, chosen by user
+     * @param view - button to return position
      */
     public void returnMarker(View view){
         Intent intent = new Intent();

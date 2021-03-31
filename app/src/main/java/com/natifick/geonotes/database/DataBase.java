@@ -11,13 +11,16 @@ import androidx.annotation.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 public class DataBase {
     //Объект дает доступ к чтению и записи базы данных
     private final SQLiteOpenHelper helper;
     //Список заметок, чтобы не обращаться к базе данных
-    private final List<Note> listOfNote = new ArrayList<>();
+    private final Set<Note> listOfNote = new TreeSet<>();
 
     public DataBase(@Nullable Context context, @Nullable String name, @Nullable SQLiteDatabase.CursorFactory factory, int version) {
         /*
@@ -44,7 +47,7 @@ public class DataBase {
         Thread oldNotesDeleter = new Thread(() -> {
             try {
                 while (true) {
-                    Thread.sleep(100000);
+                    Thread.sleep(60000);
                     deleteOldNotes();
                 }
             } catch (InterruptedException | IOException e) {
@@ -123,7 +126,7 @@ public class DataBase {
         note.update(columnToUpdate, value);
     }
 
-    public List<Note> getListOfNotes() {
+    public Set<Note> getListOfNotes() {
         /*
         Возвращение всех записей
          */
@@ -135,14 +138,13 @@ public class DataBase {
         Удаление старых записей
          */
         SQLiteDatabase databaseWriter = null;
-        Collections.sort(listOfNote);
-        for (int i = 0; i < listOfNote.size(); i++) {
-            Note note = listOfNote.get(i);
+        Set<Note> setNoteToDelete = new HashSet<>();
+        for (Note note : listOfNote) {
             if (note.getTimeToDie() < System.currentTimeMillis()) {
                 if (databaseWriter == null)
                     databaseWriter = helper.getWritableDatabase();
                 databaseWriter.delete(DataBaseHelper.TABLE_NAME, DataBaseHelper.ColumnsNames.NOTE_NAME + "=" + note.getName(), null);
-                listOfNote.remove(note);
+                setNoteToDelete.add(note);
             }
             //Прекращение выполнения, т. к. записи отсортированы по времени удаления
             else
@@ -150,6 +152,8 @@ public class DataBase {
         }
         if (databaseWriter != null)
             databaseWriter.close();
+        for (Note note : setNoteToDelete)
+            listOfNote.remove(note);
     }
 
     public static class DataBaseHelper extends SQLiteOpenHelper {

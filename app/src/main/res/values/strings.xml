@@ -8,5 +8,11 @@
     <string name="returnPosition">return marked position</string>
     <string name="channel_name">GeoNotes</string>
     <string name="channel_description">Our application\'s channel</string>
+    <string name="title_activity_main2">MainActivity2</string>
+    <!--
+    This string is used for square devices and overridden by hello_world in
+    values-round/strings.xml for round devices.
+    -->
+    <string name="hello_world">Hello Square World!</string>
 
 </resources>

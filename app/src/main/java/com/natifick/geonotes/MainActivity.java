@@ -104,7 +104,8 @@ public class MainActivity extends AppCompatActivity {
      * @param radius - радиус в метрах
      * @param duration - длительность в миллисекундах
      */
-    private void setProximityAlert(LatLng point, float radius, long duration, String title, String message){
+    private void setProximityAlert(LatLng point, float radius, long duration,
+                                   String title, String message){
         Context context = getApplicationContext();
         LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
