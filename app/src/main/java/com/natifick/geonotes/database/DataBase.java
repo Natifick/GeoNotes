@@ -5,14 +5,8 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-
 import androidx.annotation.Nullable;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -22,11 +16,16 @@ public class DataBase {
     //Список заметок, чтобы не обращаться к базе данных
     private final Set<Note> listOfNote = new TreeSet<>();
 
+    /**
+     * Создание объекта helper и копирование базы данных в listOfNote, а также инициализация
+     * надсмоторщика за старыми записями
+     * @param context да кто бы знал зачем это нужно, передавать null
+     * @param name да кто бы знал зачем это нужно, передавать null
+     * @param factory да кто бы знал зачем это нужно, передавать null
+     * @param version догадываюсь зачем это нужно, передавать 1
+     */
     public DataBase(@Nullable Context context, @Nullable String name, @Nullable SQLiteDatabase.CursorFactory factory, int version) {
-        /*
-        Создание объекта helper и копирование базы данных в listOfNote, а также инициализация
-        надсмоторщика за старыми записями
-         */
+
         helper = new DataBaseHelper(context, name, factory, version);
         try (SQLiteDatabase databaseReader = helper.getReadableDatabase()) {
             try (Cursor cursorToColums = databaseReader.query(DataBaseHelper.TABLE_NAME,
@@ -50,30 +49,32 @@ public class DataBase {
                     Thread.sleep(60000);
                     deleteOldNotes();
                 }
-            } catch (InterruptedException | IOException e) {
+            } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         });
         oldNotesDeleter.setDaemon(true);
     }
 
-    public void deleteNote(Note note) {
-        /*
-        Удаление заметки
-         */
+    /**
+     * Удаление записей из базы данных
+     * @param name имя заметки для удаления
+     */
+    public void deleteNote(String name) {
         try (SQLiteDatabase databaseWriter = helper.getWritableDatabase()) {
             databaseWriter.delete(DataBaseHelper.TABLE_NAME,
-                    DataBaseHelper.ColumnsNames.NOTE_NAME + "=" + note.getName(), null);
-            listOfNote.remove(note);
+                    DataBaseHelper.ColumnsNames.NOTE_NAME + "=" + name, null);
         }
+        listOfNote.remove(new Note(name, null, 0, 0, 0));
     }
 
+    /**
+     * Добавляет новую запись в базу данных
+     * @param note заметка для добавления
+     */
     public void addNewNote(Note note) {
-        /*
-        Добавление новой метки
-         */
         //Не может быть записей с одинаковым именем
-        if (nameIsExist(note))
+        if (nameIsExist(note.getName()))
             throw new IllegalArgumentException("Запись с таким именем уже существует");
         try (SQLiteDatabase databaseWriter = helper.getWritableDatabase()) {
             ContentValues values = new ContentValues();
@@ -87,56 +88,67 @@ public class DataBase {
         listOfNote.add(note);
     }
 
-    public boolean nameIsExist(Note note) {
-        /*
-        Не может быть записей с одинаковым именем
-         */
-        return listOfNote.contains(note);
+    /**
+     *Не может быть записей с одинаковым именем, поэтому этот метод проверяет существует ли уже
+     * запись с данным именем в базе данных, использовать перед вызовом метода addNewNote(Note note)
+     * @param name имя на проверку
+     * @return Результат проверки, true - имя уже есть в базе, false - имени в базе нет, можно
+     * использовать
+     */
+    public boolean nameIsExist(String name) {
+        return listOfNote.contains(new Note(name, null, 0, 0, 0));
     }
 
-    public void updateNote(Note note, DataBaseHelper.ColumnsNames columnToUpdate, String value) {
-        /*
-        Обновление какого-то пункта в записи
-        nameNote - название записи
-        columnToUpdate - колонка для изменения
-        value - значение для изменения
-         */
+    /**
+     * Обновление какого-то пункта в записи, использовать при обновлении существующей записи
+     * @param name название записи
+     * @param columnToUpdate колонка для изменения
+     * @param value значение для изменения
+     */
+    public void updateNote(String name, DataBaseHelper.ColumnsNames columnToUpdate, String value) {
         try (SQLiteDatabase databaseWriter = helper.getWritableDatabase()) {
             ContentValues values = new ContentValues();
             values.put(columnToUpdate.getName(), value);
             databaseWriter.update(DataBaseHelper.TABLE_NAME, values,
-                    DataBaseHelper.ColumnsNames.NOTE_NAME.getName() + "=" + note.getName(), null);
+                    DataBaseHelper.ColumnsNames.NOTE_NAME.getName() + "=" + name, null);
         }
-        note.update(columnToUpdate, value);
+        for (Note note : listOfNote)
+            if (note.getName().equals(name))
+                note.update(columnToUpdate, value);
     }
 
-    public void updateNote(Note note, DataBaseHelper.ColumnsNames columnToUpdate, long value) {
-        /*
-        Обновление какого-то пункта в записи
-        nameNote - название записи
-        columnToUpdate - колонка для изменения
-        value - значение для изменения
-         */
+    /**
+     * Обновление какого-то пункта в записи, использовать при обновлении существующей записи
+     * @param name название записи
+     * @param columnToUpdate колонка для изменения
+     * @param value значение для изменения
+     */
+    public void updateNote(String name, DataBaseHelper.ColumnsNames columnToUpdate, long value) {
         try (SQLiteDatabase databaseWriter = helper.getWritableDatabase()) {
             ContentValues values = new ContentValues();
             values.put(columnToUpdate.getName(), value);
             databaseWriter.update(DataBaseHelper.TABLE_NAME, values,
-                    DataBaseHelper.ColumnsNames.NOTE_NAME.getName() + "=" + note, null);
+                    DataBaseHelper.ColumnsNames.NOTE_NAME.getName() + "=" + name, null);
         }
-        note.update(columnToUpdate, value);
+        for (Note note : listOfNote)
+            if (note.getName().equals(name))
+                note.update(columnToUpdate, value);
     }
 
+    /**
+     * Возвращает список всех заметок, использовать для вывода заметок на экран
+     * @return Возвращает множество заметок, уникальных по названию
+     */
     public Set<Note> getListOfNotes() {
-        /*
-        Возвращение всех записей
-         */
         return listOfNote;
     }
 
-    private void deleteOldNotes() throws IOException {
-        /*
-        Удаление старых записей
-         */
+    /**
+     * Производит удаление устаревших записей, работает в отдельном потоке. На данный момент метод
+     * является бесполезным, но может пригодиться при добавлении возможности указывать время жизни
+     * заметок
+     */
+    private void deleteOldNotes()  {
         SQLiteDatabase databaseWriter = null;
         Set<Note> setNoteToDelete = new HashSet<>();
         for (Note note : listOfNote) {
@@ -184,22 +196,27 @@ public class DataBase {
             super(context, name, factory, version);
         }
 
+        /**
+         * Первичная инициализация базы данных
+         * @param db база данных для инициализации
+         */
         @Override
         public void onCreate(SQLiteDatabase db) {
-        /*
-        Создание базы данных через SQL команду
-         */
             db.execSQL("CREATE TABLE " + ColumnsNames.NOTE_NAME + " ( " + ColumnsNames.NOTE_NAME + " TEXT, "
                     + ColumnsNames.NOTE_TEXT + " TEXT, " + ColumnsNames.COORDINATE_X + " INTEGER, "
                     + ColumnsNames.COORDINATE_Y + " INTEGER, " + ColumnsNames.TIME_TO_DELETE +
                     " INTEGER " + " );");
         }
 
+        /**
+         * Когда-нибудь я пойму для чего нужен этот метод, но не сегодня
+         * @param db - база данных
+         * @param oldVersion - старая версия базы данных
+         * @param newVersion - новая версия базы данных
+         */
         @Override
         public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        /*
-        Когда-нибудь я пойму для чего нужен этот метод, но не сегодня
-         */
+
         }
     }
 }

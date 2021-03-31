@@ -22,10 +22,12 @@ public class Note implements Comparable<Note>{
         return Objects.hash(name);
     }
 
-    public void update(DataBase.DataBaseHelper.ColumnsNames param, String value) {
-        /*
-        Обновление параметров через название столбцов в базе данных
-         */
+    /**
+     * Обновление заметки через параметры базы данных
+     * @param param параметр для обновления
+     * @param value значение обновления
+     */
+    void update(DataBase.DataBaseHelper.ColumnsNames param, String value) {
         switch (param) {
             case NOTE_NAME:
                 name = value;
@@ -38,7 +40,12 @@ public class Note implements Comparable<Note>{
         }
     }
 
-    public void update(DataBase.DataBaseHelper.ColumnsNames param, long value) {
+    /**
+     * Обновление заметки через параметры базы данных
+     * @param param параметр для обновления
+     * @param value значение обновления
+     */
+    void update(DataBase.DataBaseHelper.ColumnsNames param, long value) {
         /*
         Обновление параметров через название столбцов в базе данных
          */
@@ -69,7 +76,7 @@ public class Note implements Comparable<Note>{
         return name;
     }
 
-    public void setName(String name) {
+    void setName(String name) {
         this.name = name;
     }
 
@@ -77,7 +84,7 @@ public class Note implements Comparable<Note>{
         return text;
     }
 
-    public void setText(String text) {
+    void setText(String text) {
         this.text = text;
     }
 
@@ -85,7 +92,7 @@ public class Note implements Comparable<Note>{
         return Y;
     }
 
-    public void setY(long y) {
+   void setY(long y) {
         Y = y;
     }
 
@@ -93,7 +100,7 @@ public class Note implements Comparable<Note>{
         return X;
     }
 
-    public void setX(long x) {
+    void setX(long x) {
         X = x;
     }
 
@@ -101,7 +108,7 @@ public class Note implements Comparable<Note>{
         return timeToDie;
     }
 
-    public void setTimeToDie(long timeToDie) {
+    void setTimeToDie(long timeToDie) {
         this.timeToDie = timeToDie;
     }
 
