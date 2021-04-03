@@ -5,21 +5,21 @@ import java.util.Objects;
 public class Note implements Comparable<Note>{
     private String name;
     private String text;
-    private long Y;
-    private long X;
     private long timeToDie;
+    private Address address;
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Note note = (Note) o;
-        return Objects.equals(name, note.name);
+        return Objects.equals(name, note.name) &&
+                Objects.equals(address, note.address);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name);
+        return Objects.hash(name, address);
     }
 
     /**
@@ -27,7 +27,7 @@ public class Note implements Comparable<Note>{
      * @param param параметр для обновления
      * @param value значение обновления
      */
-    void update(DataBase.DataBaseHelper.ColumnsNames param, String value) {
+    void update(DataBase.DataBaseHelper.ColumnsNamesNote param, String value) {
         switch (param) {
             case NOTE_NAME:
                 name = value;
@@ -40,36 +40,18 @@ public class Note implements Comparable<Note>{
         }
     }
 
-    /**
-     * Обновление заметки через параметры базы данных
-     * @param param параметр для обновления
-     * @param value значение обновления
-     */
-    void update(DataBase.DataBaseHelper.ColumnsNames param, long value) {
-        /*
-        Обновление параметров через название столбцов в базе данных
-         */
-        switch (param) {
-            case COORDINATE_X:
-                X = value;
-                break;
-            case COORDINATE_Y:
-                Y = value;
-                break;
-            case TIME_TO_DELETE:
-                timeToDie = value;
-                break;
-            default:
-                throw new IllegalArgumentException();
-        }
-    }
-
-    public Note(String name, String text, long x, long y, long timeToDie) {
+    public Note(String name, String text, Address address, long timeToDie) {
         this.name = name;
         this.text = text;
-        Y = y;
-        X = x;
+        this.address = address;
         this.timeToDie = timeToDie;
+    }
+
+    Note(String name, Address address) {
+        this.name = name;
+        this.address = address;
+        text = "";
+        timeToDie = 0;
     }
 
     public String getName() {
@@ -88,20 +70,12 @@ public class Note implements Comparable<Note>{
         this.text = text;
     }
 
-    public long getY() {
-        return Y;
+    public Address getAddress() {
+        return address;
     }
 
-   void setY(long y) {
-        Y = y;
-    }
-
-    public long getX() {
-        return X;
-    }
-
-    void setX(long x) {
-        X = x;
+    void setAddress(Address address) {
+        this.address = address;
     }
 
     public long getTimeToDie() {

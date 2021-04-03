@@ -5,40 +5,64 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+
 import androidx.annotation.Nullable;
+
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
 public class DataBase {
     //Объект дает доступ к чтению и записи базы данных
     private final SQLiteOpenHelper helper;
-    //Список заметок, чтобы не обращаться к базе данных
-    private final Set<Note> listOfNote = new TreeSet<>();
+    //Список отсортированных замток для удаления устаревших
+    private final Set<Note> listOfNotes = new TreeSet<>();
+    // Каждому адресу соответствует набор заметок
+    private final Map<Address, Set<Note>> addressNoteMap = new HashMap<>();
 
     /**
      * Создание объекта helper и копирование базы данных в listOfNote, а также инициализация
      * надсмоторщика за старыми записями
+     *
      * @param context да кто бы знал зачем это нужно, передавать null
-     * @param name да кто бы знал зачем это нужно, передавать null
+     * @param name    да кто бы знал зачем это нужно, передавать null
      * @param factory да кто бы знал зачем это нужно, передавать null
      * @param version догадываюсь зачем это нужно, передавать 1
      */
     public DataBase(@Nullable Context context, @Nullable String name, @Nullable SQLiteDatabase.CursorFactory factory, int version) {
-
         helper = new DataBaseHelper(context, name, factory, version);
         try (SQLiteDatabase databaseReader = helper.getReadableDatabase()) {
-            try (Cursor cursorToColums = databaseReader.query(DataBaseHelper.TABLE_NAME,
+            try (Cursor cursorToAddress = databaseReader.query(DataBaseHelper.TABLE_ADDRESS_NAME,
                     null, null, null, null, null,
-                    DataBaseHelper.ColumnsNames.TIME_TO_DELETE.getName())) {
-                while (cursorToColums.moveToNext()) {
+                    null)) {
+                while (cursorToAddress.moveToNext()) {
+                    //Создание адресов по значениям столбцов
+                    addressNoteMap.put(new Address(
+                                    cursorToAddress.getInt(cursorToAddress.getColumnIndex(DataBaseHelper.ColumnsNamesAddress.COORDINATE_X.getName())),
+                                    cursorToAddress.getInt(cursorToAddress.getColumnIndex(DataBaseHelper.ColumnsNamesAddress.COORDINATE_Y.getName())),
+                                    cursorToAddress.getString(cursorToAddress.getColumnIndex(DataBaseHelper.ColumnsNamesAddress.ADDRESS.getName()))),
+                            new HashSet<>());
+                }
+            }
+        }
+        try (SQLiteDatabase databaseReader = helper.getReadableDatabase()) {
+            try (Cursor cursorToNotes = databaseReader.query(DataBaseHelper.TABLE_NOTE_NAME,
+                    null, null, null, null, null,
+                    DataBaseHelper.ColumnsNamesNote.TIME_TO_DELETE.getName())) {
+                while (cursorToNotes.moveToNext()) {
                     //Создание Note по значениям столбцов
-                    listOfNote.add(new Note(
-                            cursorToColums.getString(cursorToColums.getColumnIndex(DataBaseHelper.ColumnsNames.NOTE_NAME.getName())),
-                            cursorToColums.getString(cursorToColums.getColumnIndex(DataBaseHelper.ColumnsNames.NOTE_TEXT.getName())),
-                            cursorToColums.getInt(cursorToColums.getColumnIndex(DataBaseHelper.ColumnsNames.COORDINATE_X.getName())),
-                            cursorToColums.getInt(cursorToColums.getColumnIndex(DataBaseHelper.ColumnsNames.COORDINATE_Y.getName())),
-                            cursorToColums.getInt(cursorToColums.getColumnIndex(DataBaseHelper.ColumnsNames.TIME_TO_DELETE.getName()))));
+                    Address address = new Address(cursorToNotes.getInt(cursorToNotes.getColumnIndex(DataBaseHelper.ColumnsNamesNote.COORDINATE_X.getName())),
+                            cursorToNotes.getInt(cursorToNotes.getColumnIndex(DataBaseHelper.ColumnsNamesNote.COORDINATE_Y.getName())),
+                            cursorToNotes.getString(cursorToNotes.getColumnIndex(DataBaseHelper.ColumnsNamesNote.ADDRESS.getName())));
+                    Note note = new Note(
+                            cursorToNotes.getString(cursorToNotes.getColumnIndex(DataBaseHelper.ColumnsNamesNote.NOTE_NAME.getName())),
+                            cursorToNotes.getString(cursorToNotes.getColumnIndex(DataBaseHelper.ColumnsNamesNote.NOTE_TEXT.getName())),
+                            address,
+                            cursorToNotes.getInt(cursorToNotes.getColumnIndex(DataBaseHelper.ColumnsNamesNote.TIME_TO_DELETE.getName())));
+                    listOfNotes.add(note);
+                    addressNoteMap.get(address).add(note);
                 }
             }
         }
@@ -58,89 +82,174 @@ public class DataBase {
 
     /**
      * Удаление записей из базы данных
-     * @param name имя заметки для удаления
+     *
+     * @param name    имя заметки для удаления
+     * @param address адрес для удаления
      */
-    public void deleteNote(String name) {
+    public void deleteNote(String address, String name) {
         try (SQLiteDatabase databaseWriter = helper.getWritableDatabase()) {
-            databaseWriter.delete(DataBaseHelper.TABLE_NAME,
-                    DataBaseHelper.ColumnsNames.NOTE_NAME + "=" + name, null);
+            databaseWriter.delete(DataBaseHelper.TABLE_NOTE_NAME,
+                    DataBaseHelper.ColumnsNamesNote.NOTE_NAME + "=" + name, null);
         }
-        listOfNote.remove(new Note(name, null, 0, 0, 0));
+        Address addressObj = new Address(address);
+        Note note = new Note(name, addressObj);
+        listOfNotes.remove(note);
+        addressNoteMap.get(addressObj).remove(note);
+    }
+
+    /**
+     * Добавление нового адреса в базу данных
+     *
+     * @param address - новый адрес
+     */
+    public void addNewAddress(Address address) {
+        if (addressIsExist(address.getAddress()))
+            throw new IllegalArgumentException("Такой адрес уже существует");
+        try (SQLiteDatabase databaseWriter = helper.getWritableDatabase()) {
+            ContentValues values = new ContentValues();
+            values.put(DataBaseHelper.ColumnsNamesAddress.ADDRESS.getName(), address.getAddress());
+            values.put(DataBaseHelper.ColumnsNamesAddress.COORDINATE_X.getName(), address.getX());
+            values.put(DataBaseHelper.ColumnsNamesAddress.COORDINATE_Y.getName(), address.getY());
+            databaseWriter.insert(DataBaseHelper.TABLE_ADDRESS_NAME, null, values);
+        }
+        addressNoteMap.put(address, new HashSet<>());
     }
 
     /**
      * Добавляет новую запись в базу данных
-     * @param note заметка для добавления
+     *
+     * @param address адрес добавления заметки
+     * @param note    заметка для добавления
      */
-    public void addNewNote(Note note) {
+    public void addNewNote(Note note, Address address) {
         //Не может быть записей с одинаковым именем
-        if (nameIsExist(note.getName()))
+        if (nameIsExist(note.getName(), address.getAddress()))
             throw new IllegalArgumentException("Запись с таким именем уже существует");
+        addressNoteMap.get(address).add(note);
         try (SQLiteDatabase databaseWriter = helper.getWritableDatabase()) {
             ContentValues values = new ContentValues();
-            values.put(DataBaseHelper.ColumnsNames.NOTE_NAME.getName(), note.getName());
-            values.put(DataBaseHelper.ColumnsNames.NOTE_TEXT.getName(), note.getText());
-            values.put(DataBaseHelper.ColumnsNames.COORDINATE_X.getName(), note.getX());
-            values.put(DataBaseHelper.ColumnsNames.COORDINATE_Y.getName(), note.getY());
-            values.put(DataBaseHelper.ColumnsNames.TIME_TO_DELETE.getName(), note.getTimeToDie());
-            databaseWriter.insert(DataBaseHelper.TABLE_NAME, null, values);
+            values.put(DataBaseHelper.ColumnsNamesNote.NOTE_NAME.getName(), note.getName());
+            values.put(DataBaseHelper.ColumnsNamesNote.NOTE_TEXT.getName(), note.getText());
+            values.put(DataBaseHelper.ColumnsNamesNote.COORDINATE_X.getName(), address.getX());
+            values.put(DataBaseHelper.ColumnsNamesNote.COORDINATE_Y.getName(), address.getY());
+            values.put(DataBaseHelper.ColumnsNamesNote.ADDRESS.getName(), address.getAddress());
+            values.put(DataBaseHelper.ColumnsNamesNote.TIME_TO_DELETE.getName(), note.getTimeToDie());
+            databaseWriter.insert(DataBaseHelper.TABLE_NOTE_NAME, null, values);
         }
-        listOfNote.add(note);
+        listOfNotes.add(note);
     }
 
     /**
-     *Не может быть записей с одинаковым именем, поэтому этот метод проверяет существует ли уже
-     * запись с данным именем в базе данных, использовать перед вызовом метода addNewNote(Note note)
-     * @param name имя на проверку
+     * Удаление адреса и всех связанных с ним заметок из базы данных
+     *
+     * @param address адрес для удаления
+     */
+    public void deleteAddress(String address) {
+        deleteAllNote(address);
+        try (SQLiteDatabase databaseWriter = helper.getWritableDatabase()) {
+            databaseWriter.delete(DataBaseHelper.TABLE_ADDRESS_NAME,
+                    DataBaseHelper.ColumnsNamesAddress.ADDRESS + "=" + address, null);
+        }
+        addressNoteMap.remove(new Address(address));
+    }
+
+    /**
+     * Удаление всех заметок по данному адресу из базы данных
+     *
+     * @param address адрес, по которому удаляются заметки
+     */
+    private void deleteAllNote(String address) {
+        for (Note note : addressNoteMap.get(new Address(address)))
+            deleteNote(address, note.getName());
+    }
+
+    /**
+     * Не может быть записей с одинаковым именем под одним адресом, поэтому этот метод проверяет существует ли уже
+     * запись с данным именем под данным адресом в базе данных, использовать перед вызовом метода addNewNote(Note note,
+     * Address address)
+     *
+     * @param name    имя на проверку
+     * @param address адрес по которому заводится заметка
      * @return Результат проверки, true - имя уже есть в базе, false - имени в базе нет, можно
      * использовать
      */
-    public boolean nameIsExist(String name) {
-        return listOfNote.contains(new Note(name, null, 0, 0, 0));
+    public boolean nameIsExist(String name, String address) {
+        Address addressObj = new Address(address);
+        return addressNoteMap.get(addressObj).contains(new Note(name, addressObj));
+    }
+
+    /**
+     * Не может быть адресов с одинаковым именем, поэтому этот метод проверяет существует ли уже адрес
+     * с данным именем в базе данных, использовать перед вызовом метод addNewAddress(Address address)
+     *
+     * @param address адрес для проверки
+     * @return Результат проверки, true - адрес уже есть в базе, false - адреса в базе нет, можно
+     * * использовать
+     */
+    public boolean addressIsExist(String address) {
+        return addressNoteMap.containsKey(new Address(address));
     }
 
     /**
      * Обновление какого-то пункта в записи, использовать при обновлении существующей записи
-     * @param name название записи
+     *
+     * @param name           название записи
      * @param columnToUpdate колонка для изменения
-     * @param value значение для изменения
+     * @param value          значение для изменения
      */
-    public void updateNote(String name, DataBaseHelper.ColumnsNames columnToUpdate, String value) {
+    public void updateNote(String name, DataBaseHelper.ColumnsNamesNote columnToUpdate, String value) {
         try (SQLiteDatabase databaseWriter = helper.getWritableDatabase()) {
             ContentValues values = new ContentValues();
             values.put(columnToUpdate.getName(), value);
-            databaseWriter.update(DataBaseHelper.TABLE_NAME, values,
-                    DataBaseHelper.ColumnsNames.NOTE_NAME.getName() + "=" + name, null);
-        }
-        for (Note note : listOfNote)
-            if (note.getName().equals(name))
-                note.update(columnToUpdate, value);
-    }
+            databaseWriter.update(DataBaseHelper.TABLE_NOTE_NAME, values,
+                    DataBaseHelper.ColumnsNamesNote.NOTE_NAME.getName() + "=" + name, null);
 
-    /**
-     * Обновление какого-то пункта в записи, использовать при обновлении существующей записи
-     * @param name название записи
-     * @param columnToUpdate колонка для изменения
-     * @param value значение для изменения
-     */
-    public void updateNote(String name, DataBaseHelper.ColumnsNames columnToUpdate, long value) {
-        try (SQLiteDatabase databaseWriter = helper.getWritableDatabase()) {
-            ContentValues values = new ContentValues();
-            values.put(columnToUpdate.getName(), value);
-            databaseWriter.update(DataBaseHelper.TABLE_NAME, values,
-                    DataBaseHelper.ColumnsNames.NOTE_NAME.getName() + "=" + name, null);
         }
-        for (Note note : listOfNote)
+        for (Note note : listOfNotes)
             if (note.getName().equals(name))
                 note.update(columnToUpdate, value);
     }
 
     /**
      * Возвращает список всех заметок, использовать для вывода заметок на экран
+     *
      * @return Возвращает множество заметок, уникальных по названию
      */
-    public Set<Note> getListOfNotes() {
-        return listOfNote;
+    public Set<Note> getSetOfNotes() {
+        return listOfNotes;
+    }
+
+    /**
+     * Возвращает множество заметок по адресу
+     *
+     * @param address адрес заметок
+     * @return множество заметок
+     */
+    public Set<Note> getSetOfNoteByAddress(String address) {
+        return addressNoteMap.get(new Address(address));
+    }
+
+    /**
+     * Возвращает список всех адрес
+     *
+     * @return список адресов
+     */
+    public Set<Address> getSetOfAddresses() {
+        return addressNoteMap.keySet();
+    }
+
+    /**
+     * Возвращет адрес по координатам. Использовать для проверки на то, привязан ли уже какой-либо адрес
+     * к выбранным координатам
+     * @param x координата
+     * @param y координата
+     * @return адрес, если он существует, иначе null
+     */
+    public Address getAddressByCoordinates(int x, int y) {
+        for (Address address : addressNoteMap.keySet())
+            if (address.getX() == x && address.getY() == y)
+                return address;
+        return null;
     }
 
     /**
@@ -148,14 +257,14 @@ public class DataBase {
      * является бесполезным, но может пригодиться при добавлении возможности указывать время жизни
      * заметок
      */
-    private void deleteOldNotes()  {
+    private void deleteOldNotes() {
         SQLiteDatabase databaseWriter = null;
         Set<Note> setNoteToDelete = new HashSet<>();
-        for (Note note : listOfNote) {
+        for (Note note : listOfNotes) {
             if (note.getTimeToDie() < System.currentTimeMillis()) {
                 if (databaseWriter == null)
                     databaseWriter = helper.getWritableDatabase();
-                databaseWriter.delete(DataBaseHelper.TABLE_NAME, DataBaseHelper.ColumnsNames.NOTE_NAME + "=" + note.getName(), null);
+                databaseWriter.delete(DataBaseHelper.TABLE_NOTE_NAME, DataBaseHelper.ColumnsNamesNote.NOTE_NAME + "=" + note.getName(), null);
                 setNoteToDelete.add(note);
             }
             //Прекращение выполнения, т. к. записи отсортированы по времени удаления
@@ -164,23 +273,28 @@ public class DataBase {
         }
         if (databaseWriter != null)
             databaseWriter.close();
-        for (Note note : setNoteToDelete)
-            listOfNote.remove(note);
+        for (Note note : setNoteToDelete) {
+            listOfNotes.remove(note);
+            addressNoteMap.get(note.getAddress()).remove(note);
+        }
     }
 
     public static class DataBaseHelper extends SQLiteOpenHelper {
         //Используется где-то в onUpgrade
         public static int DATABASE_VERSION = 1;
+
         //Константы для объявления столбцов базы данных
-        public enum ColumnsNames {
+        public enum ColumnsNamesNote {
             NOTE_NAME("NAME"),
             NOTE_TEXT("TEXT"),
             COORDINATE_X("X"),
             COORDINATE_Y("Y"),
+            ADDRESS("ADDRESS"),
             TIME_TO_DELETE("TIME_TO_DELETE");
 
             private final String name;
-            ColumnsNames(String name) {
+
+            ColumnsNamesNote(String name) {
                 this.name = name;
             }
 
@@ -189,7 +303,24 @@ public class DataBase {
             }
         }
 
-        public final static String TABLE_NAME = "NOTE_TABLE";
+        public enum ColumnsNamesAddress {
+            ADDRESS("ADDRESS"),
+            COORDINATE_X("X"),
+            COORDINATE_Y("Y");
+
+            private final String name;
+
+            ColumnsNamesAddress(String name) {
+                this.name = name;
+            }
+
+            public String getName() {
+                return name;
+            }
+        }
+
+        public final static String TABLE_NOTE_NAME = "NOTE_TABLE";
+        public final static String TABLE_ADDRESS_NAME = "ADDRESS_TABLE";
 
 
         public DataBaseHelper(@Nullable Context context, @Nullable String name, @Nullable SQLiteDatabase.CursorFactory factory, int version) {
@@ -198,19 +329,26 @@ public class DataBase {
 
         /**
          * Первичная инициализация базы данных
+         *
          * @param db база данных для инициализации
          */
         @Override
         public void onCreate(SQLiteDatabase db) {
-            db.execSQL("CREATE TABLE " + ColumnsNames.NOTE_NAME + " ( " + ColumnsNames.NOTE_NAME + " TEXT, "
-                    + ColumnsNames.NOTE_TEXT + " TEXT, " + ColumnsNames.COORDINATE_X + " INTEGER, "
-                    + ColumnsNames.COORDINATE_Y + " INTEGER, " + ColumnsNames.TIME_TO_DELETE +
-                    " INTEGER " + " );");
+            //Создание таблицы для заметок
+            db.execSQL("CREATE TABLE " + ColumnsNamesNote.NOTE_NAME + " ( " + ColumnsNamesNote.NOTE_NAME + " TEXT, "
+                    + ColumnsNamesNote.NOTE_TEXT + " TEXT, " + ColumnsNamesNote.COORDINATE_X + " INTEGER, "
+                    + ColumnsNamesNote.COORDINATE_Y + " INTEGER, " + ColumnsNamesNote.ADDRESS + " TEXT, " +
+                    ColumnsNamesNote.TIME_TO_DELETE + " INTEGER " + " );");
+            //Создание таблицы для адресов
+            db.execSQL("CREATE TABLE " + ColumnsNamesNote.NOTE_NAME + " ( " + ColumnsNamesAddress.ADDRESS +
+                    " TEXT, " + ColumnsNamesAddress.COORDINATE_X + " INTEGER, "
+                    + ColumnsNamesAddress.COORDINATE_Y + " INTEGER " + " );");
         }
 
         /**
          * Когда-нибудь я пойму для чего нужен этот метод, но не сегодня
-         * @param db - база данных
+         *
+         * @param db         - база данных
          * @param oldVersion - старая версия базы данных
          * @param newVersion - новая версия базы данных
          */
