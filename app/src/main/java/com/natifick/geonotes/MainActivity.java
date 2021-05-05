@@ -1,57 +1,117 @@
 package com.natifick.geonotes;
 
-import androidx.annotation.Nullable;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import android.Manifest;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.location.Geocoder;
-import android.location.LocationManager;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.View;
-import android.widget.TextView;
+import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
-import com.google.android.gms.maps.model.LatLng;
-
-import java.io.IOException;
-
+import com.natifick.geonotes.database.Address;
+import com.natifick.geonotes.database.DataBase;
 
 public class MainActivity extends AppCompatActivity {
 
-    public static final String MARKER = "marker";
 
-    // for intents
-    public static final String KEY_MESSAGE = "message";
-    public static final String KEY_TITLE = "title";
+    // Код запроса, когда спрашиваем разрешение для локации
+    public static final int PERMISSIONS_ACCESS_BACKGROUND_LOCATION = 1;
+    boolean locationPermissionGranted = false;
 
-    // to decode geolocation of Marker
-    Geocoder geocoder = new Geocoder(this);
-
-    // for logs
-    private static final String TAG = MainActivity.class.getSimpleName();
-
-    // notification channel
+    // Для уведомлений нужно создавать канал
     public static final String CHANNEL_ID = "GeoNotes";
+
+    // Обращаемся к базе данных
+    DataBase db;
+
+    // Массив адресов
+    Address[] addresses;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        db = new DataBase(null, null, null, 1);
+        addresses = (Address[])db.getSetOfAddresses().toArray();
+
+        // Держатель для всех этих кнопок
+        LinearLayout buttonContainer = findViewById(R.id.ButtonKeeper);
+        // Создадим кучу кнопок у которых id - индекс в массиве адресов
+        Button butt; // Чтобы штамповать кнопки
+        for (int i = 0; i < addresses.length; i++){
+            butt = new Button(this);
+
+            // Даём id и текст состоящий из адреса
+            butt.setId(i);
+            butt.setText(addresses[i].getAddress());
+            butt.setBackground(ContextCompat.getDrawable(this, R.drawable.button_shape));
+            butt.setOnClickListener(v -> {
+                Toast.makeText(this, "А это я ещё не сделал", Toast.LENGTH_SHORT).show();
+            });
+
+            buttonContainer.addView(butt);
+        }
+
+        butt = new Button(this);
+        butt.setId(addresses.length);
+        butt.setBackground(ContextCompat.getDrawable(this, R.drawable.button_shape));
+        butt.setOnClickListener(v -> {
+            Intent intent = new Intent(this, CreatePlaceActivity.class);
+            startActivity(intent);
+        });
+
         createNotificationChannel();
 
         setContentView(R.layout.activity_main);
+
+        getLocationPermission();
     }
 
     /**
-     * Creates the notification channel for our application
+     * Запрашиваем разрешение на геолокацию, если нам его ещё не дали
+     */
+    private void getLocationPermission(){
+        if (android.os.Build.VERSION.SDK_INT >= 30) {
+            if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_BACKGROUND_LOCATION)) {
+                Toast.makeText(this, "Нам нужно ваше местоположение, чтобы присылать заметки. " +
+                        "Пожалуйста, разрешите делать это в фоне", Toast.LENGTH_LONG).show();
+            }
+        }
+
+        if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
+            locationPermissionGranted = true;
+            Toast.makeText(this, "It is somehow granted", Toast.LENGTH_LONG).show();
+        } else {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{android.Manifest.permission.ACCESS_BACKGROUND_LOCATION},
+                    PERMISSIONS_ACCESS_BACKGROUND_LOCATION);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String[] permissions,
+                                           @NonNull int[] grantResults){
+        // Если разрешение было отменено, массив будет пустым
+        if (requestCode == PERMISSIONS_ACCESS_BACKGROUND_LOCATION) {
+            if (grantResults.length > 0
+                    && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                locationPermissionGranted = true;
+            }
+        }
+    }
+
+    /**
+     * Создаём канал уведомлений
      */
     private void createNotificationChannel() {
         CharSequence name = getString(R.string.channel_name);
@@ -59,78 +119,15 @@ public class MainActivity extends AppCompatActivity {
         int importance = NotificationManager.IMPORTANCE_DEFAULT;
         NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
         channel.setDescription(description);
-        // Register the channel with the system; you can't change the importance
-        // or other notification behaviors after this
+        // Регистрируем канал в системе; Нельзя поменять важность
+        // или что-то другое из настроек уведомлений после этого
         NotificationManager notificationManager = getSystemService(NotificationManager.class);
         notificationManager.createNotificationChannel(channel);
     }
 
-    /**
-     * call map activity
-     * @param view - the only button here
-     */
-    public void MakeNewPlace(View view) {
 
-        Intent intent = new Intent(this, MapsActivity.class);
-        startActivityForResult(intent, 1);
-
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (data == null) return;
-
-        if (resultCode == RESULT_OK) {
-            // remember the user's Marker
-            LatLng MarkerPoint = data.getParcelableExtra(MARKER);
-            try {
-                ((TextView) findViewById(R.id.UsersPosition)).setText(
-                        geocoder.getFromLocation(MarkerPoint.latitude,
-                                MarkerPoint.longitude, 1).get(0).toString());
-                Log.e(TAG, "Begin adding proximity alert");
-                setProximityAlert(MarkerPoint, 1000, -1, "title", "You have arrived!");
-                Log.e(TAG, "End adding proximity alert");
-            } catch (IOException ex) {
-                Log.e(TAG, ex.getMessage());
-            }
-        }
-    }
-
-    /**
-     * Устанавливаем новое уведомление на местоположение
-     *
-     * @param point - точка заданная в формате LatLng (latitude, longitude)
-     * @param radius - радиус в метрах
-     * @param duration - длительность в миллисекундах
-     */
-    private void setProximityAlert(LatLng point, float radius, long duration,
-                                   String title, String message){
-        Context context = getApplicationContext();
-        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-
-        Intent intent = new Intent(context, IntentReceiver.class);
-        // It will be easier to find intents after we set their actions as an identifier
-        intent.setAction(point.latitude+" "+point.longitude);
-
-        intent.putExtra(KEY_MESSAGE, message);
-        intent.putExtra(KEY_TITLE, title);
-
-        //flagging intent
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        //flagging pendingIntent
-        PendingIntent proximityIntent = PendingIntent.getBroadcast(context, -1,
-                intent, PendingIntent.FLAG_CANCEL_CURRENT);
-
-        // Checking if user has the right permission again
-        if (ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            locationManager.addProximityAlert(point.latitude, point.longitude, radius, duration,
-                    proximityIntent);//setting proximity alert
-        }
-        else {
-            Toast.makeText(this, "Can't set marker", Toast.LENGTH_LONG).show();
-        }
-    }
 
 }
+
+
+

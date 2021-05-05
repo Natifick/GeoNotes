@@ -5,6 +5,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
 
+import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -23,30 +24,28 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.Task;
 
-import static com.natifick.geonotes.MainActivity.MARKER;
+import static com.natifick.geonotes.CreatePlaceActivity.MARKER;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback{
-    // the map itself
+    // Сама карта
     private GoogleMap map;
 
-    // client for map and location
+    // Клиент для карты и локации
     FusedLocationProviderClient fusedLocationClient;
 
-    // camera options for the map
+    // Настройки положения и зума камеры
     private static final int DEFAULT_ZOOM = 15;
     private static final String KEY_CAMERA_POSITION = "camera_position";
 
-    // default location is, of course, our favorite university
+    // Локация по умолчанию, конечно, наш любимый ВУЗ)
     private final LatLng defaultLocation = new LatLng(55.669949, 37.481132);
 
-    // remember the user's Marker
+    // Запоминаем маркер пользователя
     LatLng MarkerPoint = defaultLocation;
 
-    // request code when asking permission
-    public static final int PERMISSIONS_ACCESS_FINE_LOCATION = 1;
-    boolean locationPermissionGranted = false;
 
-    // for logs
+
+    // Для логов
     private static final String TAG = MapsActivity.class.getSimpleName();
 
     @Override
@@ -57,14 +56,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             MarkerPoint = savedInstanceState.getParcelable(MARKER);
         }
 
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+        // Запрашиваем SupportMapFragment и ждём, пока карта не будет готова
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
 
-        // location client to work with current location
+        // Клиент локации
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
-
-        getLocationPermission();
 
         mapFragment.getMapAsync(this);
     }
@@ -79,8 +76,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     /**
-     * Returns position, chosen by user
-     * @param view - button to return position
+     * Возвращает позицию, выбранную пользователем (Marker)
+     * @param view - кнопка "ок"
      */
     public void returnMarker(View view){
         Intent intent = new Intent();
@@ -90,53 +87,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     /**
-     * get location permission if not granted already
-     */
-    private void getLocationPermission(){
-        if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
-                android.Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED) {
-            locationPermissionGranted = true;
-        } else {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
-                    PERMISSIONS_ACCESS_FINE_LOCATION);
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String[] permissions,
-                                           @NonNull int[] grantResults){
-        // If request is cancelled, the result arrays are empty.
-        if (requestCode == PERMISSIONS_ACCESS_FINE_LOCATION) {
-            if (grantResults.length > 0
-                    && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                locationPermissionGranted = true;
-                getDeviceLocation();
-            }
-        }
-        updateLocationUI();
-    }
-
-    /**
-     * updates user interface on the map
+     * Обновляем пользовательский интерфейс, отображаемый поверх карты
      */
     private void updateLocationUI(){
         if (map == null){
             return;
         }
         try{
-            if (locationPermissionGranted){
-                map.setMyLocationEnabled(true);
-                map.getUiSettings().setMyLocationButtonEnabled(true);
-
-            }
-            else{
-                map.setMyLocationEnabled(false);
-                map.getUiSettings().setMyLocationButtonEnabled(false);
-                getLocationPermission();
-            }
+            map.setMyLocationEnabled(true);
+            map.getUiSettings().setMyLocationButtonEnabled(true);
         }
         catch (SecurityException exc){
             Log.e("Exception: %s", exc.getMessage());
@@ -144,41 +103,39 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     /**
-     * when we find users current location, we set the camera to it and put marker
+     * Когда находим позицию пользователя, мы перемещаем камеру на него
      */
     private void getDeviceLocation(){
         try {
-            if (locationPermissionGranted) {
-                // task is a class for asynchronous operations
-                // we put there our demand
-                Task<Location> locationResult = fusedLocationClient.getLastLocation();
-                // lambda, 'task' is the name of the function (or an interface, it's lambda)
-                locationResult.addOnCompleteListener(this, task -> {
-                    if (task.isSuccessful()) {
-                        // Set the map's camera position to the current location of the device
-                        Location lastKnownLocation = task.getResult();
-                        if (lastKnownLocation != null) {
-                            LatLng temp = new LatLng(lastKnownLocation.getLatitude(),
-                                    lastKnownLocation.getLongitude());
-                            map.moveCamera(CameraUpdateFactory.newLatLngZoom(temp, DEFAULT_ZOOM));
-                            // Clear all markers and put one to current position
-                            map.clear();
-                            map.addMarker(new MarkerOptions().position(temp));
-                            MarkerPoint = new LatLng(lastKnownLocation.getLatitude(),
-                                    lastKnownLocation.getLongitude());
-                        } else {
-                            Log.d(TAG, "Current location is null. Using defaults.");
-                            Log.e(TAG, "Exception: %s", task.getException());
-                            map.moveCamera(CameraUpdateFactory
-                                    .newLatLngZoom(defaultLocation, DEFAULT_ZOOM));
-                            map.getUiSettings().setMyLocationButtonEnabled(false);
-                            // clear all markers and put one to default
-                            map.clear();
-                            map.addMarker(new MarkerOptions().position(defaultLocation));
-                        }
+            // Task - это класс для асинхронных операций
+            // В него мы кладём наш запрос
+            Task<Location> locationResult = fusedLocationClient.getLastLocation();
+            // Лямбда выражение, 'task' это имя функции (или интерфейса, это же лямбда)
+            locationResult.addOnCompleteListener(this, task -> {
+                if (task.isSuccessful()) {
+                    // Устанавливаем камеру в позицию пользователя
+                    Location lastKnownLocation = task.getResult();
+                    if (lastKnownLocation != null) {
+                        LatLng temp = new LatLng(lastKnownLocation.getLatitude(),
+                                lastKnownLocation.getLongitude());
+                        map.moveCamera(CameraUpdateFactory.newLatLngZoom(temp, DEFAULT_ZOOM));
+                        // Очищаем все предыдущие маркеры и устанавливаем в координату пользователя
+                        map.clear();
+                        map.addMarker(new MarkerOptions().position(temp));
+                        MarkerPoint = new LatLng(lastKnownLocation.getLatitude(),
+                                lastKnownLocation.getLongitude());
+                    } else {
+                        Log.d(TAG, "Current location is null. Using defaults.");
+                        Log.e(TAG, "Exception: %s", task.getException());
+                        map.moveCamera(CameraUpdateFactory
+                                .newLatLngZoom(defaultLocation, DEFAULT_ZOOM));
+                        map.getUiSettings().setMyLocationButtonEnabled(false);
+                        // Очиащем все маркеры и устанавливаем в позицию по умолчанию
+                        map.clear();
+                        map.addMarker(new MarkerOptions().position(defaultLocation));
                     }
-                });
-            }
+                }
+            });
         } catch (SecurityException e)  {
             Log.e("Exception: %s", e.getMessage(), e);
         }
@@ -192,21 +149,27 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      * If Google Play services is not installed on the device, the user will be prompted to install
      * it inside the SupportMapFragment. This method will only be triggered once the user has
      * installed Google Play services and returned to the app.
+     *
+     * Меняем карту сразу как она готова
+     * Этот callback вызывается, когда карта загружена
+     * и готова к отрисовке дополнительных элементов управления.
+     * Если сервис Google Play не установлен, то пользователь будет перенаправлен
+     * на страницу установки.
      */
     @Override
     public void onMapReady(GoogleMap googleMap) {
         map = googleMap;
-        // Every time user taps on the screen he will put the marker
+        // Каждый раз пользователь кликает куда-то, мы переставляем маркер
         map.setOnMapClickListener(point -> {
             MarkerPoint = point;
             map.clear();
             map.addMarker(new MarkerOptions().position(point));
             Toast.makeText(getApplicationContext(), MarkerPoint.toString(), Toast.LENGTH_SHORT).show();
         });
-        // turn on the location layer
+        // Слой элементов управления
         updateLocationUI();
 
-        // get device location and show it on the map
+        // Получаем локацию девайса и показываем на карте
         getDeviceLocation();
     }
 }
