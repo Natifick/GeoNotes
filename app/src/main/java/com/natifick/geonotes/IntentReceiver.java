@@ -10,9 +10,9 @@ import android.util.Log;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
+import static com.natifick.geonotes.CreatePlaceActivity.KEY_MESSAGE;
+import static com.natifick.geonotes.CreatePlaceActivity.KEY_TITLE;
 import static com.natifick.geonotes.MainActivity.CHANNEL_ID;
-import static com.natifick.geonotes.MainActivity.KEY_MESSAGE;
-import static com.natifick.geonotes.MainActivity.KEY_TITLE;
 import static java.lang.Math.random;
 
 /**

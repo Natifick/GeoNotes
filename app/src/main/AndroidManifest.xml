@@ -10,6 +10,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.GeoNotes">
+        <activity android:name=".CreateNoteActivity"></activity>
+        <activity android:name=".CreatePlaceActivity" />
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -44,16 +46,11 @@
                 <action android:name="com.natifick.geonotes" />
             </intent-filter>
         </receiver>
-
-        <uses-library
-            android:name="com.google.android.wearable"
-            android:required="true" />
     </application>
-
-    <uses-feature android:name="android.hardware.type.watch" />
-    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
-
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
 </manifest>
