@@ -335,12 +335,12 @@ public class DataBase {
         @Override
         public void onCreate(SQLiteDatabase db) {
             //Создание таблицы для заметок
-            db.execSQL("CREATE TABLE " + ColumnsNamesNote.NOTE_NAME + " ( " + ColumnsNamesNote.NOTE_NAME + " TEXT, "
+            db.execSQL("CREATE TABLE " + TABLE_NOTE_NAME + " ( " + ColumnsNamesNote.NOTE_NAME + " TEXT, "
                     + ColumnsNamesNote.NOTE_TEXT + " TEXT, " + ColumnsNamesNote.COORDINATE_X + " INTEGER, "
                     + ColumnsNamesNote.COORDINATE_Y + " INTEGER, " + ColumnsNamesNote.ADDRESS + " TEXT, " +
                     ColumnsNamesNote.TIME_TO_DELETE + " INTEGER " + " );");
             //Создание таблицы для адресов
-            db.execSQL("CREATE TABLE " + ColumnsNamesNote.NOTE_NAME + " ( " + ColumnsNamesAddress.ADDRESS +
+            db.execSQL("CREATE TABLE " + TABLE_ADDRESS_NAME + " ( " + ColumnsNamesAddress.ADDRESS +
                     " TEXT, " + ColumnsNamesAddress.COORDINATE_X + " INTEGER, "
                     + ColumnsNamesAddress.COORDINATE_Y + " INTEGER " + " );");
         }
