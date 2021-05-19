@@ -6,16 +6,14 @@
         android:color="#505050"/>
     <corners
         android:radius="7dp" />
-
     <padding
         android:left="1dp"
         android:right="1dp"
         android:top="1dp"
-        android:bottom="1dp"/>
+        android:bottom="1dp" />
     <size
         android:width="300dp"
-        android:height="40dp"
-        />
+        android:height="40dp" />
 
     <solid android:color="@color/teal_200"/>
 

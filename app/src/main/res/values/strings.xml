@@ -5,7 +5,7 @@
     <string name="option_get_place">get place</string>
     <string name="default_info_title">title</string>
     <string name="default_info_snippet">snippet</string>
-    <string name="returnPosition">return marked position</string>
+    <string name="return_position">return marked position</string>
     <string name="channel_name">GeoNotes</string>
     <string name="channel_description">Our application\'s channel</string>
     <string name="title_activity_main2">MainActivity2</string>
@@ -14,5 +14,11 @@
     values-round/strings.xml for round devices.
     -->
     <string name="hello_world">Hello Square World!</string>
+    <string name="permission_request">Нам нужно ваше местоположение, чтобы присылать заметки.
+        Пожалуйста, разрешите делать это в фоне:
+        \nРазрешения->Местоположение->Разрешить всегда</string>
+    <string name="goto_settings">Перейтив настройки</string>
+    <string name="exit_app">Закрыть приложение</string>
+    <string name="enter_name">Введите название локации:</string>
 
 </resources>
