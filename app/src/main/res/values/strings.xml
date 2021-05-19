@@ -16,7 +16,7 @@
     <string name="hello_world">Hello Square World!</string>
     <string name="permission_request">Нам нужно ваше местоположение, чтобы присылать заметки.
         Пожалуйста, разрешите делать это в фоне:
-        \nРазрешения->Местоположение->Разрешить всегда</string>
+        \nРазрешения -> Местоположение -> Разрешить всегда</string>
     <string name="goto_settings">Перейтив настройки</string>
     <string name="exit_app">Закрыть приложение</string>
     <string name="enter_name">Введите название локации:</string>

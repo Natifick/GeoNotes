@@ -39,6 +39,9 @@ public class MainActivity extends AppCompatActivity {
     // Массив адресов
     Address[] addresses;
 
+    // Просим пользователя дать разрешение
+    AlertDialog alert = null;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -91,28 +94,6 @@ public class MainActivity extends AppCompatActivity {
 
         // Создаём канал уведомлений
         createNotificationChannel();
-
-        // Получаем разрешение на локацию
-        getLocationPermission();
-    }
-
-    /**
-     * Запрашиваем разрешение на геолокацию, если нам его ещё не дали
-     */
-    private void getLocationPermission(){
-        if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_BACKGROUND_LOCATION)) {
-            request_permission();
-        }
-
-        if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
-                Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-                == PackageManager.PERMISSION_GRANTED) {
-            locationPermissionGranted = true;
-        } else {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{android.Manifest.permission.ACCESS_BACKGROUND_LOCATION},
-                    PERMISSIONS_ACCESS_BACKGROUND_LOCATION);
-        }
     }
 
     /**
@@ -127,24 +108,39 @@ public class MainActivity extends AppCompatActivity {
 
         // Если разрешение получено - продолжаем
         builder.setPositiveButton("перейти в настройки", (dialog, which) -> {
-            if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_BACKGROUND_LOCATION)){
-                Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                intent.setData(Uri.fromParts("package", getPackageName(), null));
-                startActivity(intent);
-
-            }
-            else{
-                dialog.cancel();
-            }
+            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+            intent.setData(Uri.fromParts("package", getPackageName(), null));
+            startActivity(intent);
         });
         // Если не хочет - закрываем приложение
         builder.setNegativeButton("Закрыть приложение", (dialog, which) -> this.finish());
 
-        AlertDialog alert = builder.create();
+        if (alert != null){
+            alert.cancel();
+        }
+        alert = builder.create();
         // Проверка того, что активность ещё не закрыта
         if (!(this).isFinishing()) {
             alert.show();
         }
+    }
+
+    /**
+     * При фокусировке на активности
+     * Если у нас нет разрешения на геолокацию, воспользуемся случаем попросить
+     */
+    @Override
+    protected void onResume() {
+        if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_BACKGROUND_LOCATION)) {
+            request_permission();
+        }
+        else{
+            if (alert != null){
+                alert.cancel();
+                alert = null;
+            }
+        }
+        super.onResume();
     }
 
     @Override
