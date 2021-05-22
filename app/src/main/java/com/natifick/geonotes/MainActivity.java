@@ -1,6 +1,7 @@
 package com.natifick.geonotes;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -14,10 +15,12 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
+import com.google.android.gms.maps.model.LatLng;
 import com.natifick.geonotes.database.Address;
 import com.natifick.geonotes.database.DataBase;
 
@@ -25,6 +28,7 @@ import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
 
+    public static final int requestCode_makeAddress = 1;
 
     // Код запроса, когда спрашиваем разрешение для локации
     public static final int PERMISSIONS_ACCESS_BACKGROUND_LOCATION = 1;
@@ -37,25 +41,36 @@ public class MainActivity extends AppCompatActivity {
     DataBase db;
 
     // Массив адресов
-    Address[] addresses;
+    Address[] addresses = null;
 
     // Просим пользователя дать разрешение
     AlertDialog alert = null;
+
+    // Куда складывать кнопки
+    LinearLayout buttonContainer = null;
+
+    // Чтобы штамповать кнопки будем хранить 2 разных margin'а
+    LinearLayout.LayoutParams small_margin = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+
+    LinearLayout.LayoutParams big_margin = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        small_margin.setMargins(0, 0, 0, 20);
+        big_margin.setMargins(0, 20, 0, 0);
+
+        // Получим список всех адресов
         db = new DataBase(null, null, null, 1);
         Set <Address> temp = db.getSetOfAddresses();
 
         Button butt; // Чтобы штамповать кнопки
         // Держатель для всех этих кнопок
-        LinearLayout buttonContainer = findViewById(R.id.ButtonKeeper);
-        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        layoutParams.setMargins(0, 0, 0, 20);
+        buttonContainer = findViewById(R.id.ButtonKeeper);
         // Если у нас ещё нет адресов, то нам нечего создавать
         if (temp.size() != 0){
             addresses = new Address[temp.size()];
@@ -64,22 +79,21 @@ public class MainActivity extends AppCompatActivity {
             for (int i = 0; i < addresses.length; i++){
                 butt = new Button(this);
                 // Даём id и текст состоящий из адреса
+                // Этот id потом будет использоваться (на 7 строчек ниже)
                 butt.setId(i);
                 butt.setText(addresses[i].getAddress());
                 butt.setSingleLine(false); // перенос текста
                 butt.setBackground(ContextCompat.getDrawable(this, R.drawable.button_shape));
                 butt.setOnClickListener(v -> {
-                    Toast.makeText(this, "А это я ещё не сделал", Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(this, CreateNoteActivity.class);
+                    intent.putExtra("address", addresses[v.getId()].getAddress());
+                    startActivity(intent);
                 });
-                buttonContainer.addView(butt, layoutParams);
+                buttonContainer.addView(butt, small_margin);
             }
         }
 
         // И кнопка добавления нового адреса, она чуть ниже всех остальных
-        layoutParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        layoutParams.setMargins(0, 20, 0, 0);
-
         // Её остальные параметры почти такие же
         butt = new Button(this);
         butt.setId(temp.size() == 0 ? 0 : addresses.length);
@@ -88,12 +102,76 @@ public class MainActivity extends AppCompatActivity {
         butt.setSingleLine(false);
         butt.setOnClickListener(v -> {
             Intent intent = new Intent(this, CreatePlaceActivity.class);
-            startActivity(intent);
+            startActivityForResult(intent, requestCode_makeAddress);
         });
-        buttonContainer.addView(butt, layoutParams);
+        buttonContainer.addView(butt, big_margin);
 
         // Создаём канал уведомлений
         createNotificationChannel();
+    }
+
+    /**
+     * Весьма бесполезный метод, чтобы не замусоривать onResult
+     * здесь добавляем кнопку с новым адресом
+     * @param name - имя кнопки (адреса)
+     */
+    private void addButton(String name){
+        Button butt;
+        // Стираем верхнюю кнопку
+        butt = findViewById(addresses.length - 1);
+        buttonContainer.removeViewInLayout(butt);
+
+        butt = new Button(this);
+        // Даём id и текст состоящий из адреса
+        // Этот id потом будет использоваться (на 7 строчек ниже)
+        butt.setId(addresses.length-1);
+        butt.setText(name);
+        butt.setSingleLine(false); // перенос текста
+        butt.setBackground(ContextCompat.getDrawable(this, R.drawable.button_shape));
+        butt.setOnClickListener(v -> {
+            Intent intent = new Intent(this, CreateNoteActivity.class);
+            intent.putExtra("address", addresses[v.getId()].getAddress());
+            startActivity(intent);
+        });
+        buttonContainer.addView(butt, small_margin);
+
+        // И кнопка добавления нового адреса, она чуть ниже всех остальных
+        // Её остальные параметры почти такие же
+        butt = new Button(this);
+        butt.setId(addresses.length);
+        butt.setBackground(ContextCompat.getDrawable(this, R.drawable.button_shape));
+        butt.setText("Создать новый адрес");
+        butt.setSingleLine(false);
+        butt.setOnClickListener(v -> {
+            Intent intent = new Intent(this, CreatePlaceActivity.class);
+            startActivityForResult(intent, requestCode_makeAddress);
+        });
+        buttonContainer.addView(butt, big_margin);
+    }
+
+    /**
+     * Сразу после завершения вызванной активности создания адреса
+     * @param requestCode - код, чтобы различать активности
+     * @param resultCode - код результата
+     * @param data - вся информация
+     */
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == requestCode_makeAddress && resultCode == RESULT_OK){
+            // Нам передали "name" и "marker"
+            LatLng coords = data.getParcelableExtra("marker");
+            String name = data.getStringExtra("name");
+
+            // Создаём на их основе новый адрес
+            Address address = new Address((int)coords.latitude, (int)coords.longitude, name);
+            db.addNewAddress(address);
+            // Теперь у нас гарантированно есть адрес, можем не проверять на null
+            Set <Address> temp = db.getSetOfAddresses();
+            addresses = new Address[temp.size()];
+            temp.toArray(addresses);
+            addButton(name);
+        }
     }
 
     /**

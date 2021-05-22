@@ -3,13 +3,59 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".CreatePlaceActivity">
+    tools:context=".CreatePlaceActivity"
+    android:orientation="vertical"
+    >
 
     <TextView
+        android:layout_marginTop="20dp"
+        android:layout_marginStart="20dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/enter_name"
-        android:id="@+id/UsersPosition"
+        android:id="@+id/AskNameLocation"
         />
+
+    <EditText
+        android:layout_marginTop="20dp"
+        android:layout_marginStart="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minWidth="200dp"
+        android:importantForAutofill="no"
+        android:inputType="textShortMessage"
+        android:id="@+id/LocationName"
+        tools:ignore="LabelFor" />
+
+    <Button
+        android:layout_marginTop="20dp"
+        android:layout_marginStart="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/ChooseLocation"
+        android:text="@string/choose_location"
+        android:background="@drawable/button_shape"
+        android:onClick="MakeNewPlace"
+        />
+
+    <TextView
+        android:layout_marginTop="20dp"
+        android:layout_marginStart="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/Location"
+        />
+
+    <Button
+        android:layout_gravity="bottom"
+        android:layout_marginStart="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/return_address"
+        android:background="@drawable/button_shape"
+        android:onClick="return_address"
+        />
+
+
 
 </LinearLayout>

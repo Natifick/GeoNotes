@@ -18,6 +18,7 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -37,6 +38,8 @@ public class CreatePlaceActivity extends AppCompatActivity {
     // Чтобы расшифровывать позицию пользователя
     Geocoder geocoder = new Geocoder(this);
 
+    LatLng coords;
+
     // Для логов
     private static final String TAG = MainActivity.class.getSimpleName();
 
@@ -47,19 +50,31 @@ public class CreatePlaceActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-
         setContentView(R.layout.activity_create_place);
     }
 
     /**
      * Вызываем активность карты
-     * @param view - кнопка "Добавить место"
+     * @param view - кнопка "Выбрать место"
      */
     public void MakeNewPlace(View view) {
 
         Intent intent = new Intent(this, MapsActivity.class);
         startActivityForResult(intent, 1);
 
+    }
+
+    /**
+     * Выходим из активности, возвращая выбранный адрес
+     * @param view - кнопка
+     */
+    public void return_address(View view){
+        Intent data = new Intent();
+        // Кладём координаты и имя, всё, что дал нам пользователь
+        data.putExtra("marker", coords);
+        data.putExtra("name", ((EditText)findViewById(R.id.LocationName)).getText().toString());
+        setResult(RESULT_OK, data);
+        finish();
     }
 
     /**
@@ -75,13 +90,15 @@ public class CreatePlaceActivity extends AppCompatActivity {
 
         if (resultCode == RESULT_OK) {
             // Запоминаем маркер пользователя
-            LatLng MarkerPoint = data.getParcelableExtra(MARKER);
+            coords = data.getParcelableExtra(MARKER);
             try {
-                ((TextView) findViewById(R.id.UsersPosition)).setText(
-                        geocoder.getFromLocation(MarkerPoint.latitude,
-                                MarkerPoint.longitude, 1).get(0).toString());
+                android.location.Address location = geocoder.getFromLocation(coords.latitude,
+                        coords.longitude, 1).get(0);
+                // Получаем описание локации
+                ((TextView) findViewById(R.id.Location)).setText(location.getAddressLine(0));
+
                 Log.e(TAG, "Добавляем уведомление по приближении");
-                setProximityAlert(MarkerPoint, 300, -1,
+                setProximityAlert(coords, 300, -1,
                         "title", "You have arrived!");
                 Log.e(TAG, "End adding proximity alert");
             } catch (IOException ex) {
