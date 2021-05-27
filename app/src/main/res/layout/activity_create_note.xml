@@ -3,11 +3,80 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     tools:context=".CreateNoteActivity">
     <TextView
+        android:layout_marginTop="20dp"
+        android:layout_marginStart="20dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Todo-todo, todo, todo todo todo todo todoooooo"
+        android:text="@string/enter_name_note"
+        android:id="@+id/AskNameNote"
+        />
+
+    <EditText
+        android:layout_marginTop="20dp"
+        android:layout_marginStart="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minWidth="200dp"
+        android:importantForAutofill="no"
+        android:inputType="textShortMessage"
+        android:id="@+id/NoteName"
+        tools:ignore="LabelFor" />
+
+
+    <TextView
+        android:layout_marginTop="40dp"
+        android:layout_marginStart="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/enter_note"
+        android:id="@+id/AskNote"
+        />
+
+    <EditText
+        android:layout_marginTop="20dp"
+        android:layout_marginStart="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minWidth="400dp"
+        android:importantForAutofill="no"
+        android:inputType="textMultiLine"
+        android:id="@+id/Note"
+        tools:ignore="LabelFor" />
+
+
+    <TextView
+        android:layout_marginTop="40dp"
+        android:layout_marginStart="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/enter_radius"
+        android:id="@+id/AskRadius"
+        />
+
+    <EditText
+        android:layout_marginTop="20dp"
+        android:layout_marginStart="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minWidth="200dp"
+        android:inputType="numberDecimal"
+        android:importantForAutofill="no"
+        android:id="@+id/Radius"
+        tools:ignore="LabelFor"
+        />
+
+    <Button
+        android:layout_marginTop="40dp"
+        android:layout_gravity="bottom"
+        android:layout_marginStart="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/done"
+        android:background="@drawable/button_shape"
+        android:onClick="returnNote"
         />
 
 </LinearLayout>

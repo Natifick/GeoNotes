@@ -13,8 +13,12 @@
         \nРазрешения -> Местоположение -> Разрешить всегда</string>
     <string name="goto_settings">Перейтив настройки</string>
     <string name="exit_app">Закрыть приложение</string>
-    <string name="enter_name">Введите название локации:</string>
+    <string name="enter_name_location">Введите название локации:</string>
     <string name="choose_location">Выберите точку на карте:</string>
-    <string name="return_address">Вернуть выбранный адрес</string>
+    <string name="done">Готово</string>
+
+    <string name="enter_name_note">Введите название заметки</string>
+    <string name="enter_note">Введите саму заметку</string>
+    <string name="enter_radius">Выберите радиус для точки (в метрах)</string>
 
 </resources>

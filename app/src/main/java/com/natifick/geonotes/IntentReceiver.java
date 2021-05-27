@@ -27,6 +27,13 @@ public class IntentReceiver extends BroadcastReceiver {
             String title = intent.getStringExtra(KEY_TITLE);
             Log.d(TAG, message);
             sendNotification(context, title, message);
+            // теперь нужно удалить alert, иначе он будет каждый раз присылаться
+            LocationManager locationManager = (LocationManager) context.
+                    getSystemService(Context.LOCATION_SERVICE);
+            PendingIntent proximityIntent = PendingIntent.getBroadcast(context, -1,
+                    intent, PendingIntent.FLAG_CANCEL_CURRENT);
+            locationManager.removeProximityAlert(proximityIntent);
+
         }
     }
 

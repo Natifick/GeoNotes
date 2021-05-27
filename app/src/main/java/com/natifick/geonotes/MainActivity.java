@@ -38,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
     public static final String CHANNEL_ID = "GeoNotes";
 
     // Обращаемся к базе данных
-    DataBase db;
+    public static DataBase db;
 
     // Массив адресов
     Address[] addresses = null;
@@ -65,8 +65,9 @@ public class MainActivity extends AppCompatActivity {
         big_margin.setMargins(0, 20, 0, 0);
 
         // Получим список всех адресов
-        db = new DataBase(null, null, null, 1);
+        db = new DataBase(getApplicationContext(), "main", null, 1);
         Set <Address> temp = db.getSetOfAddresses();
+        Toast.makeText(this, ""+temp.size(), Toast.LENGTH_LONG).show();
 
         Button butt; // Чтобы штамповать кнопки
         // Держатель для всех этих кнопок
@@ -85,8 +86,9 @@ public class MainActivity extends AppCompatActivity {
                 butt.setSingleLine(false); // перенос текста
                 butt.setBackground(ContextCompat.getDrawable(this, R.drawable.button_shape));
                 butt.setOnClickListener(v -> {
-                    Intent intent = new Intent(this, CreateNoteActivity.class);
-                    intent.putExtra("address", addresses[v.getId()].getAddress());
+                    Intent intent = new Intent(this, ViewNotesActivity.class);
+                    intent.putExtra("addrX", addresses[v.getId()].getX());
+                    intent.putExtra("addrY", addresses[v.getId()].getY());
                     startActivity(intent);
                 });
                 buttonContainer.addView(butt, small_margin);
@@ -129,8 +131,9 @@ public class MainActivity extends AppCompatActivity {
         butt.setSingleLine(false); // перенос текста
         butt.setBackground(ContextCompat.getDrawable(this, R.drawable.button_shape));
         butt.setOnClickListener(v -> {
-            Intent intent = new Intent(this, CreateNoteActivity.class);
-            intent.putExtra("address", addresses[v.getId()].getAddress());
+            Intent intent = new Intent(this, ViewNotesActivity.class);
+            intent.putExtra("addrX", addresses[v.getId()].getX());
+            intent.putExtra("addrY", addresses[v.getId()].getY());
             startActivity(intent);
         });
         buttonContainer.addView(butt, small_margin);

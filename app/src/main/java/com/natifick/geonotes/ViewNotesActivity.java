@@ -1,12 +1,24 @@
 package com.natifick.geonotes;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import android.Manifest;
+import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.location.Criteria;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
 import com.natifick.geonotes.database.Address;
 import com.natifick.geonotes.database.DataBase;
@@ -18,11 +30,21 @@ public class ViewNotesActivity extends AppCompatActivity {
 
     public static final int requestCode_makeNote = 1;
 
+    // Для intent'ов к уведомлениям
+    public static final String KEY_MESSAGE = "message";
+    public static final String KEY_TITLE = "title";
+
+    public static final long MINIMUM_TIME_BETWEEN_UPDATE = 1; // every millisecond
+    public static final float MINIMUM_DISTANCECHANGE_FOR_UPDATE = 1; // meter
+
     // Обращаемся к базе данных
-    DataBase db;
+    DataBase db = MainActivity.db;
 
     // Храним заметки текущего адреса
     Note[] notes = null;
+
+    // Адрес, переданный нам
+    Address address = null;
 
     // Куда складывать кнопки
     LinearLayout buttonContainer = null;
@@ -39,8 +61,9 @@ public class ViewNotesActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_view_notes);
 
-        db = savedInstanceState.getParcelable("database");
-        Address address = savedInstanceState.getParcelable("address");
+        int x = getIntent().getIntExtra("addrX", 0);
+        int y = getIntent().getIntExtra("addrY", 0);
+        address = db.getAddressByCoordinates(x, y);
 
         // Вроде, как-то так получаем список всех заметок адреса
         Set<Note> temp = db.getSetOfNoteByAddress(address.getAddress());
@@ -62,13 +85,13 @@ public class ViewNotesActivity extends AppCompatActivity {
                 // Даём id и текст состоящий из адреса
                 // Этот id потом будет использоваться (на 7 строчек ниже)
                 butt.setId(i);
-                butt.setText(notes[i].getText());
+                butt.setText(notes[i].getName());
                 butt.setSingleLine(false); // перенос текста
                 butt.setBackground(ContextCompat.getDrawable(this, R.drawable.button_shape));
                 butt.setOnClickListener(v -> {
-                    Intent intent = new Intent(this, CreateNoteActivity.class);
-                    intent.putExtra("address", notes[v.getId()].getText());
-                    startActivity(intent);
+                    // Intent intent = new Intent(this, CreateNoteActivity.class);
+                    // intent.putExtra("address", notes[v.getId()].getName());
+                    // startActivity(intent);
                 });
                 buttonContainer.addView(butt, small_margin);
             }
@@ -86,6 +109,134 @@ public class ViewNotesActivity extends AppCompatActivity {
             startActivityForResult(intent, requestCode_makeNote);
         });
         buttonContainer.addView(butt, big_margin);
+    }
+
+    /**
+     * Сразу после завершения вызванной активности создания заметки
+     * @param requestCode - код, чтобы различать активности
+     * @param resultCode - код результата
+     * @param data - вся информация
+     */
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == requestCode_makeNote && resultCode == RESULT_OK){
+
+            String name = data.getStringExtra("label");
+            String text = data.getStringExtra("text");
+            int radius = data.getIntExtra("radius", 10);
+
+            setProximityAlert(radius, -1, name, text);
+
+            // Создаём на их основе новую заметку и заносим в базу данных
+            Note note = new Note(name, text, address, -1);
+            db.addNewNote(note, address);
+            // Теперь у нас гарантированно есть адрес, можем не проверять на null
+            // И можно добавить кнопку
+            Set <Note> temp = db.getSetOfNoteByAddress(address.getAddress());
+            notes = new Note[temp.size()];
+            temp.toArray(notes);
+            addButton(name);
+        }
+    }
+
+    /**
+     * Весьма бесполезный метод, чтобы не замусоривать onResult
+     * здесь добавляем кнопку с новой заметкой
+     * @param name - имя кнопки (заметки)
+     */
+    private void addButton(String name){
+        Button butt;
+        // Стираем верхнюю кнопку
+        butt = findViewById(notes.length - 1);
+        buttonContainer.removeViewInLayout(butt);
+
+        butt = new Button(this);
+        // Даём id и текст состоящий из адреса
+        // Этот id потом будет использоваться (на 7 строчек ниже)
+        butt.setId(notes.length-1);
+        butt.setText(name);
+        butt.setSingleLine(false); // перенос текста
+        butt.setBackground(ContextCompat.getDrawable(this, R.drawable.button_shape));
+        butt.setOnClickListener(v -> {
+            // Intent intent = new Intent(this, EditNoteActivity.class);
+            // intent.putExtra("address", notes[v.getId()].getName());
+            // startActivity(intent);
+        });
+        buttonContainer.addView(butt, small_margin);
+
+        // И кнопка добавления нового адреса, она чуть ниже всех остальных
+        // Её остальные параметры почти такие же
+        butt = new Button(this);
+        butt.setId(notes.length);
+        butt.setBackground(ContextCompat.getDrawable(this, R.drawable.button_shape));
+        butt.setText("Создать новый адрес");
+        butt.setSingleLine(false);
+        butt.setOnClickListener(v -> {
+            Intent intent = new Intent(this, CreatePlaceActivity.class);
+            startActivityForResult(intent, requestCode_makeNote);
+        });
+        buttonContainer.addView(butt, big_margin);
+    }
+
+    /**
+     * Устанавливаем новое уведомление на местоположение
+     *
+     * @param radius - радиус в метрах
+     * @param duration - длительность в миллисекундах
+     */
+    private void setProximityAlert(float radius, long duration,
+                                   String title, String message){
+        Context context = getApplicationContext();
+        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+
+        Intent intent = new Intent(context, IntentReceiver.class);
+        // Будет проще искать потом для удаления
+        intent.setAction(address.getX()+" "+address.getY());
+
+        intent.putExtra(KEY_MESSAGE, message);
+        intent.putExtra(KEY_TITLE, title);
+
+        // Добавляем флаги к Intent'у
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        // Добавляем флаг к PendingIntent
+        PendingIntent proximityIntent = PendingIntent.getBroadcast(context, -1,
+                intent, PendingIntent.FLAG_CANCEL_CURRENT);
+
+        // Вновь проверим, что у пользователя есть нужное разрешение
+        if (ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            locationManager.addProximityAlert(address.getX(), address.getY(), radius, duration,
+                    proximityIntent);// Наконец сама установка уведомления на приближение
+
+            // Также стоит заставить его проверять это самостоятельно
+            // https://stackoverflow.com/questions/11979240/does-locationmanager-addproximityalert-require-a-location-listener
+            Criteria crit = new Criteria();
+            crit.setHorizontalAccuracy(Criteria.ACCURACY_HIGH);
+            locationManager.requestLocationUpdates(
+                    locationManager.getBestProvider(crit, true), MINIMUM_TIME_BETWEEN_UPDATE,
+                    MINIMUM_DISTANCECHANGE_FOR_UPDATE, new MyLocListener());
+        }
+        else {
+            Toast.makeText(this, "Невозможно настроить уведомление", Toast.LENGTH_LONG).show();
+        }
+    }
+}
+
+class MyLocListener implements LocationListener {
+
+    @Override
+    public void onLocationChanged(@NonNull Location location) {
+
+    }
+
+    @Override
+    public void onProviderEnabled(@NonNull String provider) {
+
+    }
+
+    @Override
+    public void onProviderDisabled(@NonNull String provider) {
 
     }
 }

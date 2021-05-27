@@ -12,7 +12,7 @@
         android:layout_marginStart="20dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/enter_name"
+        android:text="@string/enter_name_location"
         android:id="@+id/AskNameLocation"
         />
 
@@ -28,7 +28,7 @@
         tools:ignore="LabelFor" />
 
     <Button
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="40dp"
         android:layout_marginStart="20dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -47,13 +47,14 @@
         />
 
     <Button
+        android:layout_marginTop="40dp"
         android:layout_gravity="bottom"
         android:layout_marginStart="20dp"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/return_address"
+        android:text="@string/done"
         android:background="@drawable/button_shape"
-        android:onClick="return_address"
+        android:onClick="returnAddress"
         />
 
 
