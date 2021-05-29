@@ -8,13 +8,14 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 import androidx.annotation.Nullable;
 
+import java.io.Closeable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-public class DataBase {
+public class DataBase implements Closeable {
     //Объект дает доступ к чтению и записи базы данных
     private final SQLiteOpenHelper helper;
     //Список отсортированных замток для удаления устаревших
@@ -250,6 +251,13 @@ public class DataBase {
             if (address.getX() == x && address.getY() == y)
                 return address;
         return null;
+    }
+
+    /**
+     * Закрывает базу данных
+     */
+    public void close(){
+        helper.close();
     }
 
     /**
