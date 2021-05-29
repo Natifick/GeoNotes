@@ -3,11 +3,11 @@ package com.natifick.geonotes.database;
 import java.util.Objects;
 
 public class Address {
-    private int X;
-    private int Y;
+    private double X;
+    private double Y;
     private String address;
 
-    public Address(int x, int y, String address) {
+    public Address(double x,double y, String address) {
         X = x;
         Y = y;
         this.address = address;
@@ -19,19 +19,19 @@ public class Address {
         this.address = address;
     }
 
-    public int getX() {
+    public double getX() {
         return X;
     }
 
-    void setX(int x) {
+    void setX(double x) {
         X = x;
     }
 
-    public int getY() {
+    public double getY() {
         return Y;
     }
 
-   void setY(int y) {
+   void setY(double y) {
         Y = y;
     }
 
