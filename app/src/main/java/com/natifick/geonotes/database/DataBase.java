@@ -344,13 +344,13 @@ public class DataBase implements Closeable {
         public void onCreate(SQLiteDatabase db) {
             //Создание таблицы для заметок
             db.execSQL("CREATE TABLE " + TABLE_NOTE_NAME + " ( " + ColumnsNamesNote.NOTE_NAME + " TEXT, "
-                    + ColumnsNamesNote.NOTE_TEXT + " TEXT, " + ColumnsNamesNote.COORDINATE_X + " INTEGER, "
-                    + ColumnsNamesNote.COORDINATE_Y + " INTEGER, " + ColumnsNamesNote.ADDRESS + " TEXT, " +
+                    + ColumnsNamesNote.NOTE_TEXT + " TEXT, " + ColumnsNamesNote.COORDINATE_X + " DOUBLE, "
+                    + ColumnsNamesNote.COORDINATE_Y + " DOUBLE, " + ColumnsNamesNote.ADDRESS + " TEXT, " +
                     ColumnsNamesNote.TIME_TO_DELETE + " INTEGER " + " );");
             //Создание таблицы для адресов
             db.execSQL("CREATE TABLE " + TABLE_ADDRESS_NAME + " ( " + ColumnsNamesAddress.ADDRESS +
-                    " TEXT, " + ColumnsNamesAddress.COORDINATE_X + " INTEGER, "
-                    + ColumnsNamesAddress.COORDINATE_Y + " INTEGER " + " );");
+                    " TEXT, " + ColumnsNamesAddress.COORDINATE_X + " DOUBLE, "
+                    + ColumnsNamesAddress.COORDINATE_Y + " DOUBLE " + " );");
         }
 
         /**
