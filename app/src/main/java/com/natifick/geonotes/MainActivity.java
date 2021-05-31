@@ -3,7 +3,6 @@ package com.natifick.geonotes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
@@ -15,7 +14,6 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.Toast;
@@ -65,9 +63,8 @@ public class MainActivity extends AppCompatActivity {
         big_margin.setMargins(0, 20, 0, 0);
 
         // Получим список всех адресов
-        db = new DataBase(getApplicationContext(), "main", null, 1);
+        db = new DataBase(getApplicationContext(), "database", null, 1);
         Set <Address> temp = db.getSetOfAddresses();
-        Toast.makeText(this, ""+temp.size(), Toast.LENGTH_LONG).show();
 
         Button butt; // Чтобы штамповать кнопки
         // Держатель для всех этих кнопок
@@ -167,10 +164,11 @@ public class MainActivity extends AppCompatActivity {
             String name = data.getStringExtra("name");
 
             // Создаём на их основе новый адрес
-            Address address = new Address((int)coords.latitude, (int)coords.longitude, name);
+            Address address = new Address(coords.latitude, coords.longitude, name);
             db.addNewAddress(address);
             // Теперь у нас гарантированно есть адрес, можем не проверять на null
             Set <Address> temp = db.getSetOfAddresses();
+            Toast.makeText(this, ""+temp.size(), Toast.LENGTH_LONG).show();
             addresses = new Address[temp.size()];
             temp.toArray(addresses);
             addButton(name);
@@ -252,8 +250,11 @@ public class MainActivity extends AppCompatActivity {
         notificationManager.createNotificationChannel(channel);
     }
 
-
-
+    @Override
+    protected void onDestroy() {
+        db.close();
+        super.onDestroy();
+    }
 }
 
 

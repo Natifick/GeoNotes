@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 import androidx.annotation.Nullable;
 
@@ -73,6 +74,7 @@ public class DataBase implements Closeable {
                 while (true) {
                     Thread.sleep(60000);
                     deleteOldNotes();
+                    Log.e("GeoMe", "I cleaned everything");
                 }
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -136,6 +138,7 @@ public class DataBase implements Closeable {
             values.put(DataBaseHelper.ColumnsNamesNote.ADDRESS.getName(), address.getAddress());
             values.put(DataBaseHelper.ColumnsNamesNote.TIME_TO_DELETE.getName(), note.getTimeToDie());
             databaseWriter.insert(DataBaseHelper.TABLE_NOTE_NAME, null, values);
+
         }
         listOfNotes.add(note);
     }
@@ -331,7 +334,8 @@ public class DataBase implements Closeable {
         public final static String TABLE_ADDRESS_NAME = "ADDRESS_TABLE";
 
 
-        public DataBaseHelper(@Nullable Context context, @Nullable String name, @Nullable SQLiteDatabase.CursorFactory factory, int version) {
+        public DataBaseHelper(@Nullable Context context, @Nullable String name,
+                              @Nullable SQLiteDatabase.CursorFactory factory, int version) {
             super(context, name, factory, version);
         }
 
@@ -343,14 +347,14 @@ public class DataBase implements Closeable {
         @Override
         public void onCreate(SQLiteDatabase db) {
             //Создание таблицы для заметок
-            db.execSQL("CREATE TABLE " + TABLE_NOTE_NAME + " ( " + ColumnsNamesNote.NOTE_NAME + " TEXT, "
-                    + ColumnsNamesNote.NOTE_TEXT + " TEXT, " + ColumnsNamesNote.COORDINATE_X + " DOUBLE, "
-                    + ColumnsNamesNote.COORDINATE_Y + " DOUBLE, " + ColumnsNamesNote.ADDRESS + " TEXT, " +
-                    ColumnsNamesNote.TIME_TO_DELETE + " INTEGER " + " );");
+            db.execSQL("CREATE TABLE " + TABLE_NOTE_NAME + " ( " + ColumnsNamesNote.NOTE_NAME.getName() + " TEXT, "
+                    + ColumnsNamesNote.NOTE_TEXT.getName() + " TEXT, " + ColumnsNamesNote.COORDINATE_X.getName() + " DOUBLE, "
+                    + ColumnsNamesNote.COORDINATE_Y.getName() + " DOUBLE, " + ColumnsNamesNote.ADDRESS.getName() + " TEXT, " +
+                    ColumnsNamesNote.TIME_TO_DELETE.getName() + " INTEGER " + " );");
             //Создание таблицы для адресов
-            db.execSQL("CREATE TABLE " + TABLE_ADDRESS_NAME + " ( " + ColumnsNamesAddress.ADDRESS +
-                    " TEXT, " + ColumnsNamesAddress.COORDINATE_X + " DOUBLE, "
-                    + ColumnsNamesAddress.COORDINATE_Y + " DOUBLE " + " );");
+            db.execSQL("CREATE TABLE " + TABLE_ADDRESS_NAME + " ( " + ColumnsNamesAddress.ADDRESS.getName() +
+                    " TEXT, " + ColumnsNamesAddress.COORDINATE_X.getName() + " DOUBLE, "
+                    + ColumnsNamesAddress.COORDINATE_Y.getName() + " DOUBLE " + " );");
         }
 
         /**

@@ -16,6 +16,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.Toast;
@@ -61,8 +62,9 @@ public class ViewNotesActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_view_notes);
 
-        int x = getIntent().getIntExtra("addrX", 0);
-        int y = getIntent().getIntExtra("addrY", 0);
+        double x = getIntent().getDoubleExtra("addrX", 0);
+        double y = getIntent().getDoubleExtra("addrY", 0);
+        Log.w("GeoNotes", x+", "+y);
         address = db.getAddressByCoordinates(x, y);
 
         // Вроде, как-то так получаем список всех заметок адреса
@@ -102,7 +104,7 @@ public class ViewNotesActivity extends AppCompatActivity {
         butt = new Button(this);
         butt.setId(temp.size() == 0 ? 0 : notes.length);
         butt.setBackground(ContextCompat.getDrawable(this, R.drawable.button_shape));
-        butt.setText("Создать новый адрес");
+        butt.setText("Создать новую заметку");
         butt.setSingleLine(false);
         butt.setOnClickListener(v -> {
             Intent intent = new Intent(this, CreateNoteActivity.class);
@@ -170,10 +172,10 @@ public class ViewNotesActivity extends AppCompatActivity {
         butt = new Button(this);
         butt.setId(notes.length);
         butt.setBackground(ContextCompat.getDrawable(this, R.drawable.button_shape));
-        butt.setText("Создать новый адрес");
+        butt.setText("Создать новую заметку");
         butt.setSingleLine(false);
         butt.setOnClickListener(v -> {
-            Intent intent = new Intent(this, CreatePlaceActivity.class);
+            Intent intent = new Intent(this, CreateNoteActivity.class);
             startActivityForResult(intent, requestCode_makeNote);
         });
         buttonContainer.addView(butt, big_margin);
