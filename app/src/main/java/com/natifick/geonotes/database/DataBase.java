@@ -5,7 +5,6 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.util.Log;
 
 import androidx.annotation.Nullable;
 
@@ -42,8 +41,8 @@ public class DataBase implements Closeable {
                 while (cursorToAddress.moveToNext()) {
                     //Создание адресов по значениям столбцов
                     addressNoteMap.put(new Address(
-                                    cursorToAddress.getInt(cursorToAddress.getColumnIndex(DataBaseHelper.ColumnsNamesAddress.COORDINATE_X.getName())),
-                                    cursorToAddress.getInt(cursorToAddress.getColumnIndex(DataBaseHelper.ColumnsNamesAddress.COORDINATE_Y.getName())),
+                                    cursorToAddress.getDouble(cursorToAddress.getColumnIndex(DataBaseHelper.ColumnsNamesAddress.COORDINATE_X.getName())),
+                                    cursorToAddress.getDouble(cursorToAddress.getColumnIndex(DataBaseHelper.ColumnsNamesAddress.COORDINATE_Y.getName())),
                                     cursorToAddress.getString(cursorToAddress.getColumnIndex(DataBaseHelper.ColumnsNamesAddress.ADDRESS.getName()))),
                             new HashSet<>());
                 }
@@ -55,8 +54,8 @@ public class DataBase implements Closeable {
                     DataBaseHelper.ColumnsNamesNote.TIME_TO_DELETE.getName())) {
                 while (cursorToNotes.moveToNext()) {
                     //Создание Note по значениям столбцов
-                    Address address = new Address(cursorToNotes.getInt(cursorToNotes.getColumnIndex(DataBaseHelper.ColumnsNamesNote.COORDINATE_X.getName())),
-                            cursorToNotes.getInt(cursorToNotes.getColumnIndex(DataBaseHelper.ColumnsNamesNote.COORDINATE_Y.getName())),
+                    Address address = new Address(cursorToNotes.getDouble(cursorToNotes.getColumnIndex(DataBaseHelper.ColumnsNamesNote.COORDINATE_X.getName())),
+                            cursorToNotes.getDouble(cursorToNotes.getColumnIndex(DataBaseHelper.ColumnsNamesNote.COORDINATE_Y.getName())),
                             cursorToNotes.getString(cursorToNotes.getColumnIndex(DataBaseHelper.ColumnsNamesNote.ADDRESS.getName())));
                     Note note = new Note(
                             cursorToNotes.getString(cursorToNotes.getColumnIndex(DataBaseHelper.ColumnsNamesNote.NOTE_NAME.getName())),
@@ -74,7 +73,6 @@ public class DataBase implements Closeable {
                 while (true) {
                     Thread.sleep(60000);
                     deleteOldNotes();
-                    Log.e("GeoMe", "I cleaned everything");
                 }
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -92,7 +90,7 @@ public class DataBase implements Closeable {
     public void deleteNote(String address, String name) {
         try (SQLiteDatabase databaseWriter = helper.getWritableDatabase()) {
             databaseWriter.delete(DataBaseHelper.TABLE_NOTE_NAME,
-                    DataBaseHelper.ColumnsNamesNote.NOTE_NAME + "=" + name, null);
+                    DataBaseHelper.ColumnsNamesNote.NOTE_NAME.getName() + "='" + name + "'", null);
         }
         Address addressObj = new Address(address);
         Note note = new Note(name, addressObj);
@@ -152,7 +150,7 @@ public class DataBase implements Closeable {
         deleteAllNote(address);
         try (SQLiteDatabase databaseWriter = helper.getWritableDatabase()) {
             databaseWriter.delete(DataBaseHelper.TABLE_ADDRESS_NAME,
-                    DataBaseHelper.ColumnsNamesAddress.ADDRESS + "=" + address, null);
+                    DataBaseHelper.ColumnsNamesAddress.ADDRESS.getName() + "='" + address + "'", null);
         }
         addressNoteMap.remove(new Address(address));
     }
@@ -275,7 +273,7 @@ public class DataBase implements Closeable {
             if (note.getTimeToDie() < System.currentTimeMillis()) {
                 if (databaseWriter == null)
                     databaseWriter = helper.getWritableDatabase();
-                databaseWriter.delete(DataBaseHelper.TABLE_NOTE_NAME, DataBaseHelper.ColumnsNamesNote.NOTE_NAME + "=" + note.getName(), null);
+                databaseWriter.delete(DataBaseHelper.TABLE_NOTE_NAME, DataBaseHelper.ColumnsNamesNote.NOTE_NAME.getName() + "=" + note.getName(), null);
                 setNoteToDelete.add(note);
             }
             //Прекращение выполнения, т. к. записи отсортированы по времени удаления

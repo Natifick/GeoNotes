@@ -68,6 +68,28 @@
         tools:ignore="LabelFor"
         />
 
+    <!--
+    <TextView
+        android:layout_marginTop="40dp"
+        android:layout_marginStart="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/enter_expire"
+        android:id="@+id/AskExpire"
+        />
+    <EditText
+        android:layout_marginTop="20dp"
+        android:layout_marginStart="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minWidth="200dp"
+        android:inputType="datetime"
+        android:importantForAutofill="no"
+        android:id="@+id/Expire"
+        tools:ignore="LabelFor"
+        />
+        -->
+
     <Button
         android:layout_marginTop="40dp"
         android:layout_gravity="bottom"

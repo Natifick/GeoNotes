@@ -31,6 +31,8 @@ public class CreateNoteActivity extends AppCompatActivity {
         data.putExtra("label", label);
         data.putExtra("text", text);
         data.putExtra("radius", radius);
+        // to extend our app
+        data.putExtra("expire", Long.MAX_VALUE);
         setResult(RESULT_OK, data);
         finish();
     }
