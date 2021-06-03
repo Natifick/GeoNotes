@@ -39,6 +39,7 @@ public class ViewNotesActivity extends AppCompatActivity {
     // Для intent'ов к уведомлениям
     public static final String KEY_MESSAGE = "message";
     public static final String KEY_TITLE = "title";
+    public static final String KEY_ADDRESS = "address";
 
     public static final long MINIMUM_TIME_BETWEEN_UPDATE = 1; // every millisecond
     public static final float MINIMUM_DISTANCECHANGE_FOR_UPDATE = 1; // meter
@@ -73,6 +74,8 @@ public class ViewNotesActivity extends AppCompatActivity {
         double x = getIntent().getDoubleExtra("addrX", 0);
         double y = getIntent().getDoubleExtra("addrY", 0);
         address = db.getAddressByCoordinates(x, y);
+        setTitle(address.getAddress());
+
         // Куда будем складывать кнопки
         buttonContainer = findViewById(R.id.ButtonKeeper);
 
@@ -235,6 +238,7 @@ public class ViewNotesActivity extends AppCompatActivity {
 
         intent.putExtra(KEY_MESSAGE, message);
         intent.putExtra(KEY_TITLE, title);
+        intent.putExtra(KEY_ADDRESS, address.getAddress());
 
         // Добавляем флаги к Intent'у
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);

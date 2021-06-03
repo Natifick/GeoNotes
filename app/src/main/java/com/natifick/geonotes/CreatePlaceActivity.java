@@ -15,9 +15,6 @@ public class CreatePlaceActivity extends AppCompatActivity {
 
     public static final String MARKER = "marker";
 
-    // Для intent'ов к уведомлениям
-    public static final String KEY_MESSAGE = "message";
-    public static final String KEY_TITLE = "title";
 
     // Чтобы расшифровывать позицию пользователя
     Geocoder geocoder = new Geocoder(this);
